@@ -1,0 +1,86 @@
+{
+  "site": {
+    "name": "Param",
+    "tagline": "Software engineer and quant developer. Waterloo Math, class of 2027.",
+    "title": "Param | Software engineering and quant development",
+    "resumePath": "/resume.pdf"
+  },
+  "player": {
+    "blurb": "I study mathematics at the University of Waterloo in the Joint Honours Statistics and Computing program and graduate in May 2027. I build systems where research meets production, from trading signals and auction models to AI agents. I'm looking for quant research, quant development and software engineering roles.",
+    "stats": [
+      { "label": "Internships", "value": "6" },
+      { "label": "Students led", "value": "25" },
+      { "label": "Auctions modeled", "value": "1,400+" },
+      { "label": "Graduating", "value": "May 2027" }
+    ]
+  },
+  "hand": {
+    "hole": ["As", "Ks"]
+  },
+  "suits": {
+    "spades": "quant and trading",
+    "hearts": "product and full-stack",
+    "diamonds": "data and research",
+    "clubs": "infrastructure"
+  },
+  "experience": [
+    {
+      "role": "Applied software engineering intern",
+      "end": "present",
+      "location": "New York"
+    },
+    {
+      "company": "Capula Investment Management",
+      "location": "London",
+      "result": "Built an OAT auction research framework and dashboard that became standard tooling for the researchers on the Euro fixed income relative value desk.",
+      "details": [
+        "Covers 1,400+ auctions across 20 years of data and runs ahead of every upcoming auction.",
+        "Measures concession in futures and across the auctioned line and its neighbours, quantifies overbidding and values the greenshoe option.",
+        "Built a butterfly trade attribution tool for the desk."
+      ],
+      "suit": "spades"
+    },
+    {
+      "company": "Causeway Capital Management",
+      "role": "Quant developer intern",
+      "result": "Took a short-squeeze signal from raw securities lending data all the way to production as a daily screen for portfolio managers.",
+      "details": [
+        "Built it on short interest, utilization and borrow rates, with point-in-time backtesting before it shipped.",
+        "About +0.2 Sharpe with 70% recall on squeeze events.",
+        "Built an Airflow and FastAPI platform for orchestrating ML jobs."
+      ],
+      "suit": "spades"
+    },
+    {
+      "company": "Skopeo AI",
+      "start": "Fall 2025",
+      "location": "San Francisco",
+      "details": [
+        "Built a planner agent and a RAG context engine on pgvector.",
+        "Built the agent orchestration layer with retries and fallbacks, tracing and human-in-the-loop checkpoints."
+      ],
+      "suit": "hearts"
+    },
+    {
+      "company": "Siemens Healthineers",
+      "details": ["Worked on CI/CD with AWS and Kubernetes."],
+      "suit": "clubs"
+    },
+    {
+      "company": "Axonify",
+      "role": "QA automation engineer intern",
+      "start": "May 2024",
+      "end": "August 2024",
+      "location": "Waterloo",
+      "details": ["Deployed test environments with Docker and Kubernetes."],
+      "suit": "clubs"
+    }
+  ],
+  "table": {
+    "org": "UW Stocks Club, Quantitative Research division",
+    "role": "Founder and president",
+    "dates": "January 2025 to January 2026",
+    "summary": "Founded the club's quantitative research division and grew it to 25 students across three teams."
+  },
+  "showdown": "If you're hiring for quant or software engineering roles, I'd like to hear from you."
+}
