@@ -3,14 +3,17 @@
     "name": "Param",
     "tagline": "Software engineer and quant developer. Waterloo Math, class of 2027.",
     "title": "Param | Software engineering and quant development",
-    "resumePath": "/resume.pdf"
+    "email": "p7shah@uwaterloo.ca",
+    "github": "https://github.com/paramshah07",
+    "linkedin": "https://www.linkedin.com/in/param-shah-param007/",
+    "resumePath": "/resume.pdf",
+    "url": "https://paramshah.com"
   },
   "player": {
-    "blurb": "I study mathematics at the University of Waterloo in the Joint Honours Statistics and Computing program and graduate in May 2027. I build systems where research meets production, from trading signals and auction models to AI agents. I'm looking for quant research, quant development and software engineering roles.",
+    "blurb": "I study mathematics at the University of Waterloo in the Joint Honours Statistics and Computing program and graduate in May 2027. I build systems where research meets production, from trading signals and auction models to AI agents. I'm looking for quant research, quant development and software engineering roles. Something something",
     "stats": [
       { "label": "Internships", "value": "6" },
       { "label": "Students led", "value": "25" },
-      { "label": "Auctions modeled", "value": "1,400+" },
       { "label": "Graduating", "value": "May 2027" }
     ]
   },
@@ -25,13 +28,18 @@
   },
   "experience": [
     {
-      "role": "Applied software engineering intern",
+      "role": "Software Engineering Intern",
+      "start": "Sept 2026",
       "end": "present",
-      "location": "New York"
+      "location": "New York City, US",
+      "suit": "hearts"
     },
     {
       "company": "Capula Investment Management",
-      "location": "London",
+      "role": "Trading and Research Intern",
+      "start": "June 2026",
+      "end": "Aug 2026",
+      "location": "London, UK",
       "result": "Built an OAT auction research framework and dashboard that became standard tooling for the researchers on the Euro fixed income relative value desk.",
       "details": [
         "Covers 1,400+ auctions across 20 years of data and runs ahead of every upcoming auction.",
@@ -43,6 +51,9 @@
     {
       "company": "Causeway Capital Management",
       "role": "Quant developer intern",
+      "start": "May 2025",
+      "end": "Aug 2025",
+      "location": "Dallas, US",
       "result": "Took a short-squeeze signal from raw securities lending data all the way to production as a daily screen for portfolio managers.",
       "details": [
         "Built it on short interest, utilization and borrow rates, with point-in-time backtesting before it shipped.",
@@ -53,16 +64,22 @@
     },
     {
       "company": "Skopeo AI",
-      "start": "Fall 2025",
-      "location": "San Francisco",
+      "role": "Applied AI Engineering Intern",
+      "start": "Sept 2025",
+      "end": "Feb 2025",
+      "location": "San Francisco, US",
       "details": [
         "Built a planner agent and a RAG context engine on pgvector.",
         "Built the agent orchestration layer with retries and fallbacks, tracing and human-in-the-loop checkpoints."
       ],
-      "suit": "hearts"
+      "suit": "diamonds"
     },
     {
       "company": "Siemens Healthineers",
+      "role": "Software Engineering Intern",
+      "start": "Jan 2025",
+      "end": "Apr 2025",
+      "location": "Ottawa, Canada",
       "details": ["Worked on CI/CD with AWS and Kubernetes."],
       "suit": "clubs"
     },

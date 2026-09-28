@@ -7,18 +7,17 @@ The single source of every word on the site. Replace each TODO, delete any line 
 - tagline: Software engineer and quant developer. Waterloo Math, class of 2027. (DRAFT)
 - title: Param | Software engineering and quant development
 - description: TODO (one sentence for search results and link previews)
-- email: TODO
-- github: TODO (https://github.com/...)
-- linkedin: TODO (https://www.linkedin.com/in/...)
+- email: p7shah@uwaterloo.ca
+- github: https://github.com/paramshah07
+- linkedin: https://www.linkedin.com/in/param-shah-param007/
 - resumePath: /resume.pdf
-- url: TODO (your .vercel.app address for now)
+- url: paramshah.com
 
 ## player
-- blurb (DRAFT, three sentences at most): I study mathematics at the University of Waterloo in the Joint Honours Statistics and Computing program and graduate in May 2027. I build systems where research meets production, from trading signals and auction models to AI agents. I'm looking for quant research, quant development and software engineering roles.
+- blurb (DRAFT, three sentences at most): I study mathematics at the University of Waterloo in the Joint Honours Statistics and Computing program and graduate in May 2027. I build systems where research meets production, from trading signals and auction models to AI agents. I'm looking for quant research, quant development and software engineering roles. Something something
 - stats (four at most):
-  - Internships: 6 (CHECK: this counts your current internship in New York)
+  - Internships: 6
   - Students led: 25
-  - Auctions modeled: 1,400+ (CHECK: Capula)
   - Graduating: May 2027
 
 ## hand
@@ -28,20 +27,20 @@ The single source of every word on the site. Replace each TODO, delete any line 
 Suits: spades for quant and trading, hearts for product and full-stack, diamonds for data and research, clubs for infrastructure.
 
 ### TODO (company name)
-- role: Applied software engineering intern
-- start: TODO
+- role: Software Engineering Intern
+- start: Sept 2026
 - end: present
-- location: New York
+- location: New York City, US
 - result: TODO (one sentence)
 - details: TODO (up to three bullets)
 - tags: TODO
-- suit: TODO
+- suit: Hearts
 
 ### Capula Investment Management
-- role: TODO
-- start: TODO
-- end: TODO
-- location: London
+- role: Trading and Research Intern
+- start: June 2026
+- end: Aug 2026
+- location: London, UK
 - result: Built an OAT auction research framework and dashboard that became standard tooling for the researchers on the Euro fixed income relative value desk. (CHECK)
 - details:
   - Covers 1,400+ auctions across 20 years of data and runs ahead of every upcoming auction. (CHECK)
@@ -52,9 +51,9 @@ Suits: spades for quant and trading, hearts for product and full-stack, diamonds
 
 ### Causeway Capital Management
 - role: Quant developer intern
-- start: TODO
-- end: TODO
-- location: TODO
+- start: May 2025
+- end: Aug 2025
+- location: Dallas, US
 - result: Took a short-squeeze signal from raw securities lending data all the way to production as a daily screen for portfolio managers.
 - details:
   - Built it on short interest, utilization and borrow rates, with point-in-time backtesting before it shipped.
@@ -64,22 +63,22 @@ Suits: spades for quant and trading, hearts for product and full-stack, diamonds
 - suit: spades
 
 ### Skopeo AI
-- role: TODO
-- start: Fall 2025 (TODO: exact months)
-- end: TODO
-- location: San Francisco
+- role: Applied AI Engineering Intern
+- start: Sept 2025 
+- end: Feb 2025
+- location: San Francisco, US
 - result: TODO (one sentence on what the agent system let people do)
 - details:
   - Built a planner agent and a RAG context engine on pgvector.
   - Built the agent orchestration layer with retries and fallbacks, tracing and human-in-the-loop checkpoints.
 - tags: TODO
-- suit: hearts
+- suit: Diamonds
 
 ### Siemens Healthineers
-- role: TODO
-- start: TODO
-- end: TODO
-- location: TODO
+- role: Software Engineering Intern
+- start: Jan 2025
+- end: Apr 2025
+- location: Ottawa, Canada
 - result: TODO
 - details:
   - Worked on CI/CD with AWS and Kubernetes. (TODO: add what it changed)
