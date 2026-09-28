@@ -1,10 +1,10 @@
-// Estimates public/plates/depth.png from the hero render. Near is white, far is black.
+// Estimates public/plates/depth.png from the room plate. Near is white, far is black.
 // Dev only, and @huggingface/transformers isn't a project dependency, so install it first:
 //   npm install --no-save @huggingface/transformers && node scripts/make-depth.mjs
 import { pipeline, RawImage } from '@huggingface/transformers';
 import sharp from 'sharp';
 
-const src = process.argv[2] ?? 'reference/hero-16x9.jpg';
+const src = process.argv[2] ?? 'public/plates/room-16x9.jpg';
 const out = 'public/plates/depth.png';
 
 const estimate = await pipeline('depth-estimation', 'onnx-community/depth-anything-v2-small');
