@@ -97,7 +97,12 @@
     "org": "UW Stocks Club, Quantitative Research division",
     "role": "Founder and president",
     "dates": "January 2025 to January 2026",
-    "summary": "Founded the club's quantitative research division and grew it to 25 students across three teams."
+    "summary": "Founded the club's quantitative research division and grew it to 25 students across three teams.",
+    "teams": [
+      { "name": "Team A", "members": 9 },
+      { "name": "Team B", "members": 8 },
+      { "name": "Team C", "members": 8 }
+    ]
   },
   "showdown": "If you're hiring for quant or software engineering roles, I'd like to hear from you."
 }

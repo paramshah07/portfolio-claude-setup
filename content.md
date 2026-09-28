@@ -1,6 +1,6 @@
 # content.md
 
-The single source of every word on the site. Replace each TODO, delete any line you don't want shown and keep only numbers you'd defend in an interview. Lines marked CHECK may be confidential, so confirm with that company before publishing them. Lines marked DRAFT are starting points to rewrite in your own voice.
+The single source of every word on the site. Replace each TODO, delete any line you don't want shown and keep only numbers you'd defend in an interview. Lines marked CHECK may be confidential, so confirm with that company before publishing them. Lines marked DRAFT are starting points to rewrite in your own voice. Lines marked PLACEHOLDER are stand-ins that let phase 2 be built. Replace them before launch.
 
 ## site
 - name: Param
@@ -102,17 +102,20 @@ Exactly five projects: three on the flop, one on the turn and one on the river. 
 ### flop: Qs
 - name: Kalshi and Polymarket arbitrage engine
 - pitch: A cross-venue statistical arbitrage detector and trader for prediction markets.
-- metric: TODO (one number with its unit)
+- metric: Metric placeholder (PLACEHOLDER: one number with its unit)
 - stack: TODO
-- links: TODO
+- links:
+  - GitHub: https://example.com/arbitrage-engine (PLACEHOLDER)
 - details: Live system stats, model and market selection and liquidity-aware sizing across both venues. (TODO: expand)
 
 ### flop: Js
 - name: Open-source trading library
 - pitch: An algorithmic trading and backtesting framework published on PyPI.
-- metric: TODO (for example monthly downloads or GitHub stars)
+- metric: Metric placeholder (PLACEHOLDER: for example monthly downloads or GitHub stars)
 - stack: Python
-- links: TODO (PyPI and GitHub)
+- links:
+  - PyPI: https://example.com/trading-library/pypi (PLACEHOLDER)
+  - GitHub: https://example.com/trading-library/github (PLACEHOLDER)
 - details: TODO
 
 ### flop: 7d
@@ -120,23 +123,26 @@ Exactly five projects: three on the flop, one on the turn and one on the river. 
 - pitch: Replaced paper and spreadsheets with one system for sales, inventory, accounts, staff and production.
 - metric: Weekly sales outreach up from 10 to 50 prospects, converting around 20%
 - stack: TODO (n8n plus what else)
-- links: TODO (a write-up or a demo video, since the system itself is private)
+- links:
+  - Write-up: https://example.com/ai-native-erp (PLACEHOLDER: a write-up or a demo video, since the system itself is private)
 - details: Covers sales leads, inventory, accounts, manufacturing output and staff attendance and productivity. n8n automations bring in new leads every day, and the business now has analytics on its supply chain, production lines and shipments.
 
 ### turn: 2c
 - name: Cross-asset macro signals research
 - pitch: Macro signals tested on S&P 500 sector spread returns with Newey-West-adjusted regressions.
-- metric: TODO
+- metric: Metric placeholder (PLACEHOLDER)
 - stack: TODO
-- links: TODO
+- links:
+  - Write-up: https://example.com/macro-signals (PLACEHOLDER)
 - details: TODO
 
 ### river: Ts
 - name: This site
 - pitch: The table you're sitting at, built with Astro, React Three Fiber and GSAP. (Once phase 2 ships, add the hand evaluator and exact equity math written from scratch.)
-- metric: TODO (after phase 2, for example the evaluator's test count or frame time)
+- metric: Metric placeholder (PLACEHOLDER: after phase 2, for example the evaluator's test count or frame time)
 - stack: Astro, React Three Fiber, GSAP
-- links: TODO (repository)
+- links:
+  - Repository: https://example.com/this-site (PLACEHOLDER: the repository is private for now)
 - details: TODO
 
 ## table
@@ -145,9 +151,9 @@ Exactly five projects: three on the flop, one on the turn and one on the river. 
 - dates: January 2025 to January 2026
 - summary: Founded the club's quantitative research division and grew it to 25 students across three teams. (DRAFT)
 - teams (three, with member counts adding up to 25):
-  - TODO: team name, member count
-  - TODO: team name, member count
-  - TODO: team name, member count
+  - Team A: 9 (PLACEHOLDER)
+  - Team B: 8 (PLACEHOLDER)
+  - Team C: 8 (PLACEHOLDER)
 
 ## showdown
 - line (DRAFT): If you're hiring for quant or software engineering roles, I'd like to hear from you.
