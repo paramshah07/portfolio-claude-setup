@@ -16,6 +16,10 @@ const river = [...turn, 'Ts'];
 /**
  * Equity by sampling runouts, against a random hand or a known one, with its interval: the
  * estimate plus or minus z standard errors. z = 1.96 gives the usual 95% interval.
+ *
+ * Each sample scores the hero 1 for a win, 1/2 for a tie and 0 for a loss, so equity is the mean
+ * score. The samples are independent, so by the central limit theorem the mean lands within z
+ * standard errors of the true equity with the chance z sets: 95% for 1.96 and 99% for 2.576.
  */
 function monteCarlo(hole: string[], board: string[], { samples = 200_000, seed = 1, z = 1.96, opponent = [] as string[] } = {}) {
   const random = mulberry32(seed);
@@ -38,6 +42,9 @@ function monteCarlo(hole: string[], board: string[], { samples = 200_000, seed =
     squares += share * share;
   }
   const equity = sum / samples;
+  // The variance of one score is the mean of the squares minus the square of the mean. Ties score
+  // 1/2, so it isn't p(1 - p). Dividing by n instead of n - 1 changes nothing at 200,000 samples.
+  // The mean of n scores has 1/n of that variance, and its square root is the standard error.
   const error = Math.sqrt((squares / samples - equity * equity) / samples);
   return { equity, low: equity - z * error, high: equity + z * error };
 }
@@ -169,6 +176,10 @@ test('the worker drops a job when a newer one arrives', async () => {
   await import('../../src/workers/equity.worker');
   // The flop is still running when the turn arrives, so only the turn answers.
   const running = worker.onmessage({ data: { id: 1, hole, board: flop } });
+  // Run every pending promise callback before the turn arrives. A pause built from promises alone
+  // would let the flop finish and answer here, and in a browser it would never let a newer message
+  // in. The real pause waits for a task, which is when the page's next message can run.
+  for (let i = 0; i < 1000; i++) await Promise.resolve();
   const newer = worker.onmessage({ data: { id: 2, hole, board: turn } });
   await Promise.all([running, newer]);
   expect(replies.map((reply) => reply.id)).toEqual([2]);
