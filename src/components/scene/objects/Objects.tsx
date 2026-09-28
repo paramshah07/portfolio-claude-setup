@@ -22,22 +22,24 @@ export function Objects({ hole, board, teams, shown }: StageProps & { shown: boo
   );
 }
 
-// Temporary: a neutral studio environment so brass and card stock have something to reflect.
-// The light pass replaces it with the warm HDRI and the lamp Lightformers, and deletes this
-// along with the Rig's stand-in lights.
+// Temporary: a dim, neutral studio environment so brass and card stock have something to reflect
+// until the light pass. It steps aside for any environment the rig sets first, and the rig's
+// own Environment replaces it whenever it lands, so the light pass can delete this at leisure.
 function NeutralReflections() {
   const { gl, scene } = useThree();
   useEffect(() => {
+    if (scene.environment) return;
     const pmrem = new THREE.PMREMGenerator(gl);
     const room = new RoomEnvironment();
-    const env = pmrem.fromScene(room, 0.04).texture;
+    // Dimmed in the room itself, so scene.environmentIntensity stays the rig's to set.
+    room.traverse((o) => ((o as THREE.Mesh).material as THREE.MeshBasicMaterial | undefined)?.color?.multiplyScalar(0.35));
+    const target = pmrem.fromScene(room, 0.04);
     room.dispose();
     pmrem.dispose();
-    scene.environment = env;
-    scene.environmentIntensity = 0.35;
+    scene.environment = target.texture;
     return () => {
-      scene.environment = null;
-      env.dispose();
+      if (scene.environment === target.texture) scene.environment = null;
+      target.dispose();
     };
   }, [gl, scene]);
   return null;
