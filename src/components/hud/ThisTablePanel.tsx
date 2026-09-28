@@ -114,7 +114,8 @@ export default function ThisTablePanel({ intro, approach, repository }: ThisTabl
         }
       >
         {opened && (
-          <div className="body">
+          // A tab stop, so the keyboard can scroll it even when nothing inside is focusable.
+          <div className="body" tabIndex={0} role="region" aria-labelledby="this-table-title">
             {intro && (
               <>
                 <h3>What you're looking at</h3>

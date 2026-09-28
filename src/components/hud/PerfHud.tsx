@@ -109,7 +109,12 @@ export default function PerfHud() {
     const toggle = document.querySelector('[data-hud-toggle]');
     // The stats panel's toggle waits for JavaScript, since the HUD can't open without it.
     toggle?.removeAttribute('hidden');
-    const unsubscribe = hud.subscribe((on) => toggle?.setAttribute('aria-pressed', String(on)));
+    const unsubscribe = hud.subscribe((on) => {
+      toggle?.setAttribute('aria-pressed', String(on));
+      // Closing with focus inside, from its button or with H, hands focus back to whatever opened
+      // it. This runs before React removes the HUD, and it doesn't scroll the page back there.
+      if (!on && document.activeElement?.closest('.perf-hud')) opener.current?.focus({ preventScroll: true });
+    });
     document.addEventListener('keydown', onKey);
     document.addEventListener('click', onClick);
     return () => {
@@ -123,12 +128,6 @@ export default function PerfHud() {
     if (open) opener.current = document.activeElement as HTMLElement | null;
   }, [open]);
 
-  // Closing from inside hands focus back to whatever had it, since the button is about to vanish.
-  const close = () => {
-    hud.set(false);
-    opener.current?.focus();
-  };
-
   if (!open) return null;
   return (
     <section className="perf-hud" aria-labelledby="perf-hud-title">
@@ -136,7 +135,7 @@ export default function PerfHud() {
         id="perf-hud-title"
         title="Performance"
         end={
-          <button type="button" aria-label="Close performance HUD" onClick={close}>
+          <button type="button" aria-label="Close performance HUD" onClick={() => hud.set(false)}>
             Close
           </button>
         }

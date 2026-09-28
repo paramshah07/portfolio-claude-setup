@@ -23,7 +23,7 @@ export function Panel({ id, title, heading: Heading = 'h2', end, children }: Pan
         <span aria-hidden="true" />
         <span aria-hidden="true" />
         <Heading id={id}>{title}</Heading>
-        {end && <span className="hud-end">{end}</span>}
+        <span className="hud-end">{end}</span>
       </div>
       {children}
     </div>

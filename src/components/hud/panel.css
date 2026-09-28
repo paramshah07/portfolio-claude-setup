@@ -28,12 +28,13 @@
 
 .hud-bar > :is(h2, h3) {
   margin-left: 0.25rem;
-  line-height: 1.25;
 }
 
-/* Brass is under 4.5:1 on the panel, so text stays cream. */
+/* Fills the rest of the bar, so text arriving here never moves anything. Brass is under 4.5:1
+   on the panel, so text stays cream. */
 .hud-end {
-  margin-left: auto;
+  flex: 1;
+  text-align: right;
   color: color-mix(in srgb, var(--color-cream) 75%, transparent);
 }
 
@@ -63,7 +64,9 @@
   color: color-mix(in srgb, var(--color-cream) 75%, transparent);
 }
 
+/* Values fill the rest of the row, so a number changing width never moves its box. */
 .hud-rows dd {
+  flex: 1 0 auto;
   text-align: right;
 }
 
@@ -100,10 +103,10 @@ html:not(.js) .equity {
   align-items: baseline;
 }
 
-/* Win, tie and loss as one bar. The same colors mark the rows below it. */
+/* Win, tie and loss as one bar. The same colors mark the rows below it. Each segment is the
+   full width, scaled and slid into place, so the count-up never touches layout. */
 .equity .split {
-  display: grid;
-  grid-template-columns: 0fr 0fr 1fr;
+  position: relative;
   height: 0.375rem;
   margin: 0 1rem;
   border-radius: var(--radius-chip);
@@ -124,6 +127,10 @@ html:not(.js) .equity {
 }
 
 .equity .split > span {
+  position: absolute;
+  inset: 0;
+  transform-origin: left;
+  scale: 0 1;
   background: var(--swatch);
 }
 
@@ -220,6 +227,11 @@ html:not(.js) .equity {
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 0.5rem 1.25rem 1.5rem;
+}
+
+/* Inset, since the panel clips anything drawn past its edge. */
+.this-table .body:focus-visible {
+  outline-offset: -3px;
 }
 
 .this-table h3 {

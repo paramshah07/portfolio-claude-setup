@@ -41,7 +41,7 @@ export default function EquityReadout({ hole, board }: EquityReadoutProps) {
   const latest = useRef(0);
   const inView = useRef(false);
   const shown = useRef<Shares>({ equity: 0, win: 0, tie: 0, loss: 0 });
-  // React renders these empty and never touches them again, so the count-up writes them directly.
+  // React renders these once and never updates them, so the count-up writes them directly.
   const cells = useRef<Partial<Record<keyof Shares, HTMLElement | null>>>({});
   const split = useRef<HTMLDivElement>(null);
 
@@ -74,7 +74,12 @@ export default function EquityReadout({ hole, board }: EquityReadoutProps) {
     const write = () => {
       const now = shown.current;
       for (const stat of STATS) cells.current[stat]!.textContent = percent.format(now[stat]);
-      split.current!.style.gridTemplateColumns = `${now.win}fr ${now.tie}fr ${now.loss}fr`;
+      const [win, tie, loss] = split.current!.children as HTMLCollectionOf<HTMLElement>;
+      win.style.scale = `${now.win} 1`;
+      tie.style.translate = `${now.win * 100}%`;
+      tie.style.scale = `${now.tie} 1`;
+      loss.style.translate = `${(now.win + now.tie) * 100}%`;
+      loss.style.scale = `${now.loss} 1`;
     };
     if (inView.current) setAnnouncement(`${NAMES[result.street]}: ${percent.format(result.equity)} equity. ${result.madeHand}. ${result.exact ? 'Exact' : 'Estimated'}.`);
     const target = { equity: result.equity, win: result.win, tie: result.tie, loss: result.loss };
@@ -95,7 +100,8 @@ export default function EquityReadout({ hole, board }: EquityReadoutProps) {
         <dl className="hud-rows">
           <div className="lead">
             <dt>Equity</dt>
-            <dd ref={cell('equity')} />
+            {/* A space holds the big number's line until the first answer. */}
+            <dd ref={cell('equity')}>{'\u00a0'}</dd>
           </div>
         </dl>
         <div ref={split} className="split" aria-hidden="true">
