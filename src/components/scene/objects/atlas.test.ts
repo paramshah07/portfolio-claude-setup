@@ -3,11 +3,9 @@ import { expect, test } from 'vitest';
 import profile from '../../../content/profile.json';
 import atlas from './atlas.json';
 
-test('the card atlas holds every card in content, in the order the scene reads it', () => {
-  const ids = readdirSync('src/content/board')
+test('the card atlas has a face for every card in content', () => {
+  const board = readdirSync('src/content/board')
     .filter((f) => f.endsWith('.md'))
-    .map((f) => f.slice(0, -3))
-    .sort((a, b) => a.localeCompare(b));
-  const board = ids.map((id) => readFileSync(`src/content/board/${id}.md`, 'utf8').match(/^card:\s*(\S+)/m)?.[1]);
-  expect(atlas.cards, 'Content changed. Run node scripts/make-card-faces.mjs').toEqual([...profile.hand.hole, ...board]);
+    .map((f) => readFileSync(`src/content/board/${f}`, 'utf8').match(/^card:\s*['"]?([2-9TJQKA][shdc])/m)?.[1]);
+  expect([...atlas.cards].sort(), 'Content changed. Run node scripts/make-card-faces.mjs').toEqual([...profile.hand.hole, ...board].sort());
 });

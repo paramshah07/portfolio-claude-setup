@@ -1,7 +1,7 @@
 // Draws every card in content as SVG and packs them with the back into one atlas:
 // public/cards/atlas.webp, a grid of cells in reading order holding the hole cards, the board
-// cards in project order and then the back. src/components/scene/objects/atlas.json records the
-// layout for the scene, and a test fails if content stops matching it.
+// cards and then the back. src/components/scene/objects/atlas.json records the layout for the
+// scene, and a test fails if content stops matching it.
 // Run from the repo root: node scripts/make-card-faces.mjs
 import { readFile, readdir, writeFile } from 'node:fs/promises';
 import sharp from 'sharp';
@@ -25,6 +25,9 @@ const SUITS = {
   c: '<circle cx="50" cy="27" r="21"/><circle cx="27" cy="58" r="21"/><circle cx="73" cy="58" r="21"/><path d="M44 58l-6 39h24l-6-39z"/>',
 };
 const RANKS = { T: '10' };
+// librsvg only sees installed fonts, and the page loads EB Garamond from Fontsource, so this
+// machine needs it installed (either the static Medium or the variable font) to match the page.
+const FONT = 'EB Garamond Medium, EB Garamond, Georgia, serif';
 
 const pip = (suit, x, y, size) =>
   `<g transform="translate(${x - size / 2} ${y - size / 2}) scale(${size / 100})">${SUITS[suit]}</g>`;
@@ -41,7 +44,7 @@ function face(card) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${CELL.w}" height="${CELL.h}">
     <rect width="${w}" height="${h}" rx="${RADIUS}" fill="${CREAM}"/>
     <rect x="96" y="40" width="${w - 192}" height="${h - 80}" rx="10" fill="none" stroke="${BRASS}" stroke-width="3"/>
-    <g fill="${color}" font-family="EB Garamond, Garamond, Georgia, serif" font-weight="500">
+    <g fill="${color}" font-family="${FONT}" font-weight="500">
       ${index}
       <g transform="rotate(180 ${w / 2} ${h / 2})">${index}</g>
       ${center}
@@ -62,12 +65,17 @@ async function back() {
     .toBuffer();
 }
 
-// The page sorts the board by entry id, which is the file name without its extension.
+// Say so when the ranks will fall back to Georgia, since they won't match the page.
+const sample = async (family) =>
+  sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100"><text y="80" font-size="80" font-family="${family}">KQ7</text></svg>`)).raw().toBuffer();
+if ((await sample('EB Garamond Medium, EB Garamond')).equals(await sample('No such font'))) {
+  console.warn('EB Garamond isn\'t installed here, so the card ranks are set in Georgia. Install it and rerun to match the page.');
+}
+
 const { hand } = JSON.parse(await readFile('src/content/profile.json', 'utf8'));
-const files = (await readdir('src/content/board')).filter((f) => f.endsWith('.md'));
-const ids = files.map((f) => f.slice(0, -3)).sort((a, b) => a.localeCompare(b));
+const files = (await readdir('src/content/board')).filter((f) => f.endsWith('.md')).sort();
 const board = await Promise.all(
-  ids.map(async (id) => (await readFile(`src/content/board/${id}.md`, 'utf8')).match(/^card:\s*(\S+)/m)[1]),
+  files.map(async (f) => (await readFile(`src/content/board/${f}`, 'utf8')).match(/^card:\s*['"]?([2-9TJQKA][shdc])/m)[1]),
 );
 const cards = [...hand.hole, ...board];
 
