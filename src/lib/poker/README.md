@@ -165,13 +165,14 @@ The 2♣ on the turn changes nothing but uses up one of his two chances, so equi
 
 ## Benchmarks
 
-Apple M4 Pro, Node 22.20, one thread unless noted, from `node tests/poker/bench.ts`:
+Apple M4 Pro, Node 22.20, one thread unless noted, from `node tests/poker/bench.ts`, which reads Param's hand from content.md. The 12-thread row is from `node src/lib/poker/make-preflop.ts`:
 
 | What | Time | Rate |
 |---|---|---|
 | All 133,784,560 seven-card hands | 1.77 s | 75.4 million evaluations a second |
+| Preflop against a random hand, looked up in preflop.json | 0.003 ms | |
 | Flop against a random hand, outs included | 14 ms | 76.8 million evaluations a second |
-| Turn against a random hand | 0.57 ms | |
+| Turn against a random hand, outs included | 0.57 ms | |
 | River against a random hand | 0.02 ms | |
 | Preflop heads-up, 1,712,304 boards | 55 ms | 61.8 million evaluations a second |
 | Preflop against a random hand, 12 threads | 3.3 s | 636 million matchups a second |
@@ -213,7 +214,7 @@ The fields are ordered by importance, and inside each field a higher rank is a h
 The categories are checked strongest first and each keeps only the bits it needs, which is the best five directly. Seven cards can't make a flush together with a full house or quads, so checking in order never hides a better hand. evaluate7 matches the best of its 21 subsets on 100,000 random hands, and the benchmark reproduces the published category counts for all 133,784,560 seven-card hands.
 
 **6. How do you know the numbers are right?**
-In layers. The five-card census gives 7,462 distinct values and the textbook counts. The seven-card census matches the published table. evaluate7 agrees with a brute-force best of 21, and Monte Carlo agrees with the exact numbers. The results match published equities too: ace-king suited against a random hand is 67.04% and pocket aces 85.2%. And the tests catch breakage: deleting half the three-of-a-kind formula fails four of them.
+In layers. The five-card census gives 7,462 distinct values and the textbook counts. The seven-card census matches the published table. evaluate7 agrees with a brute-force best of 21, and Monte Carlo agrees with the exact numbers. The results match published equities too: ace-king suited against a random hand is 67.04% and pocket aces 85.2%. And the tests catch breakage: deleting either half of the three-of-a-kind formula fails six or eight of the 22.
 
 **7. Why precompute preflop but enumerate the flop live?**
 Preflop against a random hand is 2,097,572,400 matchups: about 28 seconds on one laptop core, 3.3 s on all 12. The flop is 1,070,190, which takes 14 ms. The preflop answer only changes when the hole cards do, so it's computed once and keyed by starting hand, and a test keeps it from going stale.
