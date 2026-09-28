@@ -1,0 +1,381 @@
+/* The HUD panels. The frame and rows copy the stats panel in The Player, so all four read as one set. */
+.hud-panel {
+  border: 1px solid var(--color-brass);
+  border-radius: var(--radius-panel);
+  background: var(--color-panel);
+  color: var(--color-cream);
+  font-family: var(--font-plex-mono);
+  font-size: var(--text-small);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+}
+
+.hud-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-brass) 45%, transparent);
+}
+
+.hud-bar > span:not(.hud-end) {
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--radius-chip);
+  background: color-mix(in srgb, var(--color-brass) 70%, transparent);
+}
+
+.hud-bar > :is(h2, h3) {
+  margin-left: 0.25rem;
+}
+
+/* Fills the rest of the bar, so text arriving here never moves anything. Brass is under 4.5:1
+   on the panel, so text stays cream. */
+.hud-end {
+  flex: 1;
+  text-align: right;
+  color: color-mix(in srgb, var(--color-cream) 75%, transparent);
+}
+
+.hud-end button {
+  border-radius: 4px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.hud-rows {
+  padding: 0.5rem 1rem 0.75rem;
+}
+
+.hud-rows > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 1rem;
+  padding: 0.5rem 0;
+}
+
+.hud-rows > div + div {
+  border-top: 1px solid color-mix(in srgb, var(--color-cream) 12%, transparent);
+}
+
+.hud-rows dt {
+  color: color-mix(in srgb, var(--color-cream) 75%, transparent);
+}
+
+/* Values fill the rest of the row, so a number changing width never moves its box. */
+.hud-rows dd {
+  flex: 1 0 auto;
+  text-align: right;
+}
+
+.hud-note {
+  color: color-mix(in srgb, var(--color-cream) 75%, transparent);
+}
+
+/* Equity readout, under The Board. Without JavaScript it has nothing to show, so it isn't there. */
+.equity {
+  width: min(100%, 22rem);
+  margin: 2.5rem 0 0 auto;
+}
+
+html:not(.js) .equity {
+  display: none;
+}
+
+.equity .hud-note {
+  padding: 0.75rem 1rem 0;
+}
+
+/* One line tall before the first answer, so nothing below moves when it lands. */
+.equity .exact {
+  min-height: calc(1lh + 1rem);
+  padding: 0 1rem 1rem;
+}
+
+.equity .lead dd {
+  font-size: 1.75rem;
+  line-height: 1.1;
+}
+
+.equity .lead {
+  align-items: baseline;
+}
+
+/* Win, tie and loss as one bar. The same colors mark the rows below it. Each segment is the
+   full width, scaled and slid into place, so the count-up never touches layout. */
+.equity .split {
+  position: relative;
+  height: 0.375rem;
+  margin: 0 1rem;
+  border-radius: var(--radius-chip);
+  overflow: hidden;
+  background: color-mix(in srgb, var(--color-cream) 12%, transparent);
+}
+
+.equity .win {
+  --swatch: var(--color-brass);
+}
+
+.equity .tie {
+  --swatch: color-mix(in srgb, var(--color-cream) 55%, transparent);
+}
+
+.equity .loss {
+  --swatch: var(--color-card-red);
+}
+
+.equity .split > span {
+  position: absolute;
+  inset: 0;
+  transform-origin: left;
+  scale: 0 1;
+  background: var(--swatch);
+}
+
+.equity dt.win::before,
+.equity dt.tie::before,
+.equity dt.loss::before {
+  content: '';
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: 0.5rem;
+  border-radius: 2px;
+  background: var(--swatch);
+}
+
+/* Performance HUD, pinned to the corner over everything but the dialogs. */
+.perf-hud {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: var(--z-overlays);
+  width: min(18rem, 100% - 2rem);
+  box-shadow: 0 24px 50px -20px rgb(0 0 0 / 0.8);
+  border-radius: var(--radius-panel);
+  transition: opacity 0.35s cubic-bezier(0.165, 0.84, 0.44, 1), translate 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+@starting-style {
+  .perf-hud {
+    opacity: 0;
+    translate: 0 0.75rem;
+  }
+}
+
+/* "How this table works": a slide-over from the right edge. The dialog is only the positioning
+   box, so a click that lands on the dialog itself is a click on the backdrop. */
+.this-table {
+  inset: 0.75rem 0.75rem 0.75rem auto;
+  width: min(34rem, 100% - 1.5rem);
+  height: auto;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  overflow: visible;
+  background: none;
+  color: inherit;
+  translate: 0;
+  transition:
+    translate 0.45s cubic-bezier(0.165, 0.84, 0.44, 1),
+    display 0.45s allow-discrete,
+    overlay 0.45s allow-discrete;
+}
+
+.this-table:not([open]) {
+  translate: calc(100% + 1rem) 0;
+}
+
+@starting-style {
+  .this-table[open] {
+    translate: calc(100% + 1rem) 0;
+  }
+}
+
+.this-table::backdrop {
+  background: color-mix(in srgb, var(--color-room) 65%, transparent);
+  opacity: 0;
+  transition:
+    opacity 0.45s ease-out,
+    display 0.45s allow-discrete,
+    overlay 0.45s allow-discrete;
+}
+
+.this-table[open]::backdrop {
+  opacity: 1;
+}
+
+@starting-style {
+  .this-table[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+.this-table > .hud-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-shadow: 0 30px 60px -20px rgb(0 0 0 / 0.8);
+}
+
+.this-table .body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.5rem 1.25rem 1.5rem;
+}
+
+/* Inset, since the panel clips anything drawn past its edge. */
+.this-table .body:focus-visible {
+  outline-offset: -3px;
+}
+
+.this-table h3 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1rem;
+}
+
+.this-table p {
+  max-width: 60ch;
+  color: color-mix(in srgb, var(--color-cream) 85%, transparent);
+}
+
+.this-table p + * {
+  margin-top: 0.75rem;
+}
+
+.this-table a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.this-table .hud-rows {
+  padding: 0;
+}
+
+.this-table table {
+  width: 100%;
+  margin-top: 0.75rem;
+  border-collapse: collapse;
+}
+
+.this-table caption {
+  padding-bottom: 0.25rem;
+  text-align: left;
+  color: color-mix(in srgb, var(--color-cream) 75%, transparent);
+}
+
+.this-table tr {
+  border-top: 1px solid color-mix(in srgb, var(--color-cream) 12%, transparent);
+}
+
+.this-table tfoot tr:first-child {
+  border-top-color: color-mix(in srgb, var(--color-brass) 60%, transparent);
+}
+
+.this-table :is(th, td) {
+  padding: 0.375rem 0;
+  text-align: left;
+  font-weight: 400;
+}
+
+.this-table td {
+  text-align: right;
+}
+
+.this-table figure {
+  margin-top: 0.75rem;
+}
+
+.this-table svg {
+  width: 100%;
+  max-width: 26rem;
+  height: auto;
+  font-family: var(--font-plex-mono);
+}
+
+.this-table svg .box {
+  fill: color-mix(in srgb, var(--color-cream) 4%, transparent);
+  stroke: var(--color-brass);
+}
+
+.this-table svg .group {
+  fill: none;
+  stroke: color-mix(in srgb, var(--color-brass) 60%, transparent);
+  stroke-dasharray: 4 4;
+}
+
+.this-table svg .edge {
+  stroke: var(--color-brass);
+  marker-end: url(#this-table-arrow);
+}
+
+.this-table svg .both {
+  marker-start: url(#this-table-arrow);
+}
+
+.this-table svg marker path {
+  fill: var(--color-brass);
+}
+
+.this-table svg text {
+  fill: var(--color-cream);
+  font-size: 11px;
+}
+
+.this-table svg .sub {
+  fill: color-mix(in srgb, var(--color-cream) 75%, transparent);
+  font-size: 9.5px;
+}
+
+@media (max-width: 767px) {
+  .this-table {
+    inset: 0.5rem 0.5rem 0.5rem auto;
+    width: calc(100% - 1rem);
+  }
+
+  .this-table .body {
+    padding-inline: 1rem;
+  }
+
+  .perf-hud {
+    right: 0.75rem;
+    bottom: 0.75rem;
+    width: min(18rem, 100% - 1.5rem);
+  }
+}
+
+/* Under reduced motion the panels only fade, in 150ms. */
+@media (prefers-reduced-motion: reduce) {
+  .perf-hud,
+  .this-table,
+  .this-table::backdrop {
+    transition-duration: 0.15s;
+  }
+
+  .this-table,
+  .this-table:not([open]) {
+    translate: none;
+    opacity: 1;
+    transition-property: opacity, display, overlay;
+  }
+
+  .this-table:not([open]) {
+    opacity: 0;
+  }
+
+  @starting-style {
+    .this-table[open] {
+      translate: none;
+      opacity: 0;
+    }
+
+    .perf-hud {
+      translate: none;
+    }
+  }
+}
