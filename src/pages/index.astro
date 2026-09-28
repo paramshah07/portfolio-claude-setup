@@ -1,0 +1,63 @@
+---
+import { getCollection, getEntry } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Nav from '../components/nav/Nav.astro';
+import TheDeal from '../components/sections/TheDeal.astro';
+import ThePlayer from '../components/sections/ThePlayer.astro';
+import HandHistory from '../components/sections/HandHistory.astro';
+import TheBoard from '../components/sections/TheBoard.astro';
+import TheTable from '../components/sections/TheTable.astro';
+import Showdown from '../components/sections/Showdown.astro';
+import Footer from '../components/sections/Footer.astro';
+import Stage from '../components/scene/Stage';
+import CommandPalette from '../components/palette/CommandPalette';
+import { checkDeck } from '../lib/deck';
+
+// Sections read their own content, so this page only composes them. The islands get what
+// the scene and palette specs need through phase 3, so later work shouldn't touch this file.
+const { site, hand, table } = (await getEntry('profile', 'main'))!.data;
+const board = (await getCollection('board'))
+  .sort((a, b) => a.id.localeCompare(b.id))
+  .map(({ data }) => ({ street: data.street, card: data.card }));
+checkDeck(hand.hole, board);
+---
+
+<Base>
+  <div class="stage" aria-hidden="true">
+    <picture>
+      <source media="(max-width: 767px)" srcset="/plates/hero-phone.avif" type="image/avif" />
+      <img id="plate" src="/plates/hero-desktop.avif" alt="" fetchpriority="high" />
+    </picture>
+    <Stage client:idle hole={hand.hole} board={board} teams={table.teams} />
+  </div>
+  <Nav />
+  <main class="relative z-(--z-content)">
+    <TheDeal />
+    <div class="felt">
+      <ThePlayer />
+      <HandHistory />
+      <TheBoard />
+      <TheTable />
+      <Showdown />
+    </div>
+  </main>
+  <Footer />
+  <CommandPalette client:idle site={site} />
+</Base>
+
+<style>
+  /* The stage layer: the hero plate now, the WebGL scene once it loads. */
+  .stage {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-stage);
+    pointer-events: none;
+    background: var(--color-room);
+  }
+
+  .stage img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+</style>

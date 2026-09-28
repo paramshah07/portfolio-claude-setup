@@ -18,7 +18,7 @@ Build only what belongs to the current phase unless the task names a later one. 
 
 - Astro with static output and TypeScript, deployed on Vercel. Content collections with zod validate the typed content in src/content.
 - Tailwind for layout. Design tokens are CSS custom properties in src/styles/tokens.css.
-- React only inside islands: Stage (the WebGL scene, client:only="react"), CommandPalette (client:idle) and the HUD panels (client:idle, phase 2).
+- React only inside islands: Stage (the WebGL scene, client:idle: it renders nothing on the server and dynamically imports the scene only after the hero plate has loaded, so React and three.js arrive after first paint), CommandPalette (client:idle) and the HUD panels (client:idle, phase 2).
 - Nanostores with @nanostores/react for state shared between the page and the islands: scroll progress, active section, quality tier, sound and HUD visibility. Stores live in src/lib/state.
 - three, @react-three/fiber, @react-three/drei and @react-three/postprocessing, imported only inside src/components/scene and src/components/hud.
 - Phase 3 only: three-custom-shader-material for the card bend, @react-three/rapier for chip physics (lazy-loaded) and @sparkjsdev/spark for the splat room.
