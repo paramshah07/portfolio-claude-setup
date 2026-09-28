@@ -45,8 +45,7 @@ export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> 
     atlas.colorSpace = THREE.SRGBColorSpace;
     atlas.anisotropy = gl.capabilities.getMaxAnisotropy();
     const { cell, cols, cards: codes } = atlasLayout;
-    const rows = Math.ceil((codes.length + 1) / cols);
-    const [W, H] = [cols * (cell.w + cell.gutter) - cell.gutter, rows * (cell.h + cell.gutter) - cell.gutter];
+    const { width: W, height: H } = atlas.image as HTMLImageElement;
     const material = (i: number) => {
       const t = atlas.clone();
       t.repeat.set(cell.w / W, cell.h / H);
@@ -122,19 +121,15 @@ function pivot(x: number, z: number, spin: number, faceUp: boolean) {
 }
 
 // Lay a card down, slide it across the felt and let it settle.
-function slide(tl: gsap.core.Timeline, card: THREE.Group, to: { x: number; z: number }, y: number, spin: number, at: gsap.Position) {
+function slide(tl: gsap.core.Timeline, card: THREE.Group, to: { x: number; z: number }, y: number, spin: number, at: number) {
   tl.to(card.position, { ...to, y, duration: 0.8 }, at);
   tl.to(card.rotation, { x: FLAT, z: spin, duration: 0.8 }, at);
 }
 
 // Turn a card face up about its long edge, lifting it just enough to clear the felt.
-function flip(tl: gsap.core.Timeline, card: THREE.Group, y: number, at: gsap.Position) {
-  const turn = { a: 0 };
-  const update = () => {
-    card.rotation.y = turn.a;
-    card.position.y = y + (CARD.w / 2 + 0.004) * Math.sin(turn.a);
-  };
-  tl.to(turn, { a: Math.PI, duration: 0.7, ease: 'expo.out', onUpdate: update }, at);
+function flip(tl: gsap.core.Timeline, card: THREE.Group, y: number, at: number) {
+  const lift = () => void (card.position.y = y + (CARD.w / 2 + 0.004) * Math.sin(card.rotation.y));
+  tl.to(card.rotation, { y: Math.PI, duration: 0.7, ease: 'expo.out', onUpdate: lift }, at);
 }
 
 // Riffle, square up, stand the cards up in a fan, slide the top ones to the player's seat and
@@ -146,7 +141,7 @@ function deal(tl: gsap.core.Timeline, cards: THREE.Group[], dealt: number) {
   // Split the deck into two halves that slide apart and lift their inner edges.
   cards.forEach((card, i) => {
     const left = i < half;
-    tl.to(card.position, { x: x + (left ? -0.05 : 0.05), y: rest(i % half) + 0.012, duration: 0.5, ease: 'power2.inOut' }, 0);
+    tl.to(card.position, { x: x + (left ? -0.05 : 0.05), y: rest(i % half) + 0.016, duration: 0.5, ease: 'power2.inOut' }, 0);
     tl.to(card.rotation, { y: left ? -0.3 : 0.3, z: left ? 0.3 : -0.06, duration: 0.5, ease: 'power2.inOut' }, 0);
   });
 
@@ -170,9 +165,9 @@ function deal(tl: gsap.core.Timeline, cards: THREE.Group[], dealt: number) {
   const top = [...order].reverse();
   top.slice(0, dealt).forEach((card, n) => {
     const spin = n ? -0.05 : 0.07;
-    const at = `deal+=${n * 0.3}`;
+    const at = tl.labels.deal + n * 0.3;
     slide(tl, card, pivot(SPOTS.seat.x + (n - (dealt - 1) / 2) * 0.07, SPOTS.seat.z, spin, true), rest(n), spin, at);
-    flip(tl, card, rest(n), `${at}+=0.75`);
+    flip(tl, card, rest(n), at + 0.75);
   });
 
   // Lay the rest back down as a deck.
