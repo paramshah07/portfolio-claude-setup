@@ -14,7 +14,7 @@ All three panels share one look: a brass frame around panel #363430, a small tit
 The site's signature feature. As The Board deals, it shows how Param's hole cards (hand.hole in content) stand against one random opponent hand.
 
 - It runs street by street: preflop, flop, turn and river.
-- Preflop uses Monte Carlo with 200,000 samples and shows a 95% interval. Flop, turn and river use exact enumeration over every remaining runout and opponent hand.
+- Every street is exact. Preflop against a random hand is 2,097,572,400 matchups, too many for a visitor's browser, so node src/lib/poker/make-preflop.ts computes it once with a worker thread on every core and commits src/lib/poker/preflop.json. A test fails and prints that command if the hole cards in content.md stop matching it. Flop, turn and river use exact enumeration over every remaining runout and opponent hand.
 - It shows win, tie and loss percentages, equity (wins plus half the ties), the current made hand in plain words ("Two pair, aces and kings") and whether the number is exact or estimated.
 - The math runs in src/workers/equity.worker.ts with plain postMessage, so the main thread never blocks. Stale jobs are cancelled when the street changes.
 - Numbers update with a short count-up. Under reduced motion they jump straight to the value.
