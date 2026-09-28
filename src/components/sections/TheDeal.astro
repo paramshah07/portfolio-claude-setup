@@ -1,0 +1,69 @@
+---
+import { getEntry } from 'astro:content';
+
+const { site } = (await getEntry('profile', 'main'))!.data;
+---
+
+<section id="the-deal" class="deal relative flex min-h-svh items-start md:items-center">
+  <div class="relative mx-auto w-full max-w-7xl px-6 pt-24 md:px-12 md:pt-0">
+    <div class="max-w-xl">
+      <h1 class="text-display">{site.name}</h1>
+      {site.tagline && <p class="mt-4 max-w-md text-cream/85">{site.tagline}</p>}
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a href="#the-player" class="button solid">View the hand</a>
+        {site.resumePath && <a href={site.resumePath} target="_blank" rel="noopener" class="button">Résumé</a>}
+      </div>
+    </div>
+  </div>
+  <span class="cue" aria-hidden="true"></span>
+</section>
+
+<style>
+  /* The plate sits in the fixed stage layer behind the page. This darkens the left side
+     for the copy and adds the vignette every view gets. */
+  .deal {
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--color-room) 75%, transparent), transparent 55%),
+      radial-gradient(ellipse 95% 90% at 55% 40%, transparent 60%, color-mix(in srgb, var(--color-room) 45%, transparent));
+  }
+
+  @media (max-width: 767px) {
+    .deal {
+      background: linear-gradient(color-mix(in srgb, var(--color-room) 55%, transparent), transparent 45%);
+    }
+  }
+
+  /* A dark glass fill keeps the outlined button readable wherever it lands on the plate,
+     including over a lamp on phones. */
+  .button {
+    border: 1px solid color-mix(in srgb, var(--color-cream) 55%, transparent);
+    border-radius: var(--radius-chip);
+    padding: 0.75rem 1.5rem;
+    background: color-mix(in srgb, var(--color-room) 65%, transparent);
+    backdrop-filter: blur(6px);
+  }
+
+  .button:hover {
+    border-color: var(--color-cream);
+  }
+
+  .button.solid {
+    border-color: var(--color-cream);
+    background: var(--color-cream);
+    color: var(--color-ink);
+  }
+
+  .button.solid:hover {
+    background: var(--color-lamp);
+    border-color: var(--color-lamp);
+  }
+
+  .cue {
+    position: absolute;
+    bottom: 1.5rem;
+    left: 50%;
+    width: 1px;
+    height: 3.5rem;
+    background: linear-gradient(var(--color-brass), transparent);
+  }
+</style>

@@ -1,0 +1,113 @@
+---
+import { getEntry } from 'astro:content';
+
+const { site } = (await getEntry('profile', 'main'))!.data;
+const links = [
+  { id: 'hand-history', name: 'Hand History' },
+  { id: 'the-board', name: 'The Board' },
+  { id: 'showdown', name: 'Showdown' },
+];
+---
+
+<header class="nav fixed inset-x-0 top-0 z-(--z-nav)" data-nav>
+  <nav aria-label="Main" class="mx-auto flex h-16 max-w-7xl items-center gap-8 px-6 md:px-12">
+    <a href="#the-deal" class="mr-auto text-2xl font-medium">{site.name}</a>
+    <ul class="hidden items-center gap-8 md:flex">
+      {links.map((link) => <li><a href={`#${link.id}`} class="link">{link.name}</a></li>)}
+    </ul>
+    <div class="flex items-center gap-3">
+      {site.resumePath && <a href={site.resumePath} target="_blank" rel="noopener" class="pill">Résumé</a>}
+      <button type="button" class="pill key" aria-label="Command palette" aria-haspopup="dialog" data-palette>
+        <span data-mod>⌘</span>K
+      </button>
+      <button type="button" class="pill md:hidden" popovertarget="nav-sheet">Menu</button>
+    </div>
+  </nav>
+
+  <div id="nav-sheet" popover class="sheet">
+    <ul class="flex flex-col gap-6 text-h3">
+      {links.map((link) => <li><a href={`#${link.id}`}>{link.name}</a></li>)}
+    </ul>
+    <button type="button" class="pill mt-8" popovertarget="nav-sheet" popovertargetaction="hide">Close</button>
+  </div>
+</header>
+
+<script>
+  import { palette } from '../../lib/state';
+
+  const nav = document.querySelector('[data-nav]')!;
+  const hero = document.getElementById('the-deal');
+  // Transparent over the hero, rail once the hero has scrolled under the nav.
+  if (hero) {
+    new IntersectionObserver(([entry]) => nav.classList.toggle('is-solid', !entry.isIntersecting), {
+      rootMargin: '-64px 0px 0px',
+    }).observe(hero);
+  }
+
+  document.querySelector('[data-palette]')?.addEventListener('click', () => palette.set(true));
+
+  // The sheet's links scroll the page, so the sheet closes on the way.
+  const sheet = document.getElementById('nav-sheet')!;
+  sheet.addEventListener('click', (event) => {
+    if ((event.target as Element).closest('a')) sheet.hidePopover();
+  });
+
+  // Every ⌘ on the page, here and in the Showdown hint, reads Ctrl off Apple devices.
+  if (!/Mac|iPhone|iPad/.test(navigator.userAgent)) {
+    for (const key of document.querySelectorAll('[data-mod]')) key.textContent = 'Ctrl ';
+  }
+</script>
+
+<style>
+  .nav {
+    background: color-mix(in srgb, var(--color-rail) 90%, transparent);
+    backdrop-filter: blur(8px);
+  }
+
+  /* Without JavaScript the nav stays solid, so it never sits unreadable over cream. */
+  :global(.js) .nav:not(.is-solid) {
+    background: transparent;
+    backdrop-filter: none;
+  }
+
+  .link:hover,
+  .sheet a:hover {
+    color: var(--color-lamp);
+  }
+
+  .pill {
+    border: 1px solid color-mix(in srgb, var(--color-brass) 70%, transparent);
+    border-radius: var(--radius-chip);
+    padding: 0.25rem 1rem;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .pill:hover {
+    border-color: var(--color-brass);
+    color: var(--color-lamp);
+  }
+
+  /* Wide enough for "Ctrl K", so swapping the label never shifts the nav. */
+  .key {
+    min-width: 4.5rem;
+  }
+
+  :global(html:not(.js)) .key {
+    display: none;
+  }
+
+  .sheet {
+    inset: 4rem 0 auto;
+    width: 100%;
+    margin: 0;
+    border: 0;
+    padding: 2rem 1.5rem 3rem;
+    background: var(--color-rail);
+    color: var(--color-cream);
+  }
+
+  .sheet::backdrop {
+    background: color-mix(in srgb, var(--color-room) 60%, transparent);
+  }
+</style>

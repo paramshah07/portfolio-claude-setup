@@ -1,0 +1,86 @@
+---
+import { getEntry } from 'astro:content';
+
+const { player } = (await getEntry('profile', 'main'))!.data;
+---
+
+<section id="the-player" class="lamp-pool px-6 py-16 md:px-12 md:py-24">
+  <div class="on-cream mx-auto grid max-w-6xl gap-12 rounded-panel p-8 shadow-2xl md:grid-cols-[minmax(0,1fr)_20rem] md:p-16">
+    <div>
+      <h2 class="text-h2">The Player</h2>
+      {player.blurb && <p class="mt-6 max-w-[62ch]">{player.blurb}</p>}
+    </div>
+    {
+      player.stats.length > 0 && (
+        <div class="stats self-start">
+          <div class="bar" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
+          <dl>
+            {player.stats.map((stat) => (
+              <div class="row">
+                <dt>{stat.label}</dt>
+                <dd>{stat.value}</dd>
+                {stat.note && <dd class="note">{stat.note}</dd>}
+              </div>
+            ))}
+          </dl>
+        </div>
+      )
+    }
+  </div>
+</section>
+
+<style>
+  .stats {
+    border: 1px solid var(--color-brass);
+    border-radius: var(--radius-panel);
+    background: var(--color-panel);
+    color: var(--color-cream);
+    font-family: var(--font-plex-mono);
+    font-size: var(--text-small);
+    font-variant-numeric: tabular-nums;
+    overflow: hidden;
+  }
+
+  .bar {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-brass) 45%, transparent);
+  }
+
+  .bar span {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: var(--radius-chip);
+    background: color-mix(in srgb, var(--color-brass) 70%, transparent);
+  }
+
+  dl {
+    padding: 0.5rem 1rem 0.75rem;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0 1rem;
+    padding: 0.5rem 0;
+  }
+
+  .row + .row {
+    border-top: 1px solid color-mix(in srgb, var(--color-cream) 12%, transparent);
+  }
+
+  dt {
+    color: color-mix(in srgb, var(--color-cream) 75%, transparent);
+  }
+
+  .note {
+    flex-basis: 100%;
+    color: color-mix(in srgb, var(--color-cream) 65%, transparent);
+  }
+</style>

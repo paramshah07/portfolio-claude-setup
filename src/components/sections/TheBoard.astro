@@ -1,0 +1,254 @@
+---
+import { getCollection, render } from 'astro:content';
+import { PIPS, SUIT_OF } from '../../lib/deck';
+
+const projects = await Promise.all(
+  (await getCollection('board'))
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .map(async (project) => ({
+      ...project,
+      Details: (await render(project)).Content,
+      // A card opens a sheet only when the sheet has more than the card face shows.
+      hasSheet: Boolean(project.body?.trim()) || project.data.links.length > 0,
+    })),
+);
+const streets = [
+  { street: 'flop', name: 'Flop' },
+  { street: 'turn', name: 'Turn' },
+  { street: 'river', name: 'River' },
+];
+const face = (card: string) => {
+  const suit = SUIT_OF[card[1] as keyof typeof SUIT_OF];
+  return { rank: card[0] === 'T' ? '10' : card[0], pip: PIPS[suit], red: suit === 'hearts' || suit === 'diamonds' };
+};
+---
+
+<section id="the-board" class="lamp-pool px-6 py-16 md:px-12 md:py-24">
+  <div class="board-area mx-auto max-w-7xl">
+    <h2 class="text-h2">The Board</h2>
+    <div class="board mt-12">
+      {
+        streets.map(({ street, name }) => (
+          <div class="street">
+            <h3 class="street-name">{name}</h3>
+            <ul class="cards" role="list">
+              {projects
+                .filter((project) => project.data.street === street)
+                .map((project) => {
+                  const { rank, pip, red } = face(project.data.card);
+                  const Card = project.hasSheet ? 'button' : 'div';
+                  const opens = project.hasSheet
+                    ? { type: 'button', commandfor: `sheet-${project.id}`, command: 'show-modal', 'aria-haspopup': 'dialog' }
+                    : {};
+                  return (
+                    <li>
+                      <Card class:list={['card card-stock', { red }]} {...opens}>
+                        <span class="index">
+                          {rank}
+                          <span>{pip}</span>
+                        </span>
+                        <span class="name">{project.data.name}</span>
+                        {project.data.pitch && <span>{project.data.pitch}</span>}
+                        {project.data.metric && <span class="metric">{project.data.metric}</span>}
+                        {project.data.stack.length > 0 && (
+                          <span class="stack mt-auto">
+                            {project.data.stack.map((tag) => (
+                              <span>{tag}</span>
+                            ))}
+                          </span>
+                        )}
+                        <span class="index end" aria-hidden="true">
+                          {rank}
+                          <span>{pip}</span>
+                        </span>
+                      </Card>
+                    </li>
+                  );
+                })}
+            </ul>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+
+  {
+    projects
+      .filter((project) => project.hasSheet)
+      .map(({ id, data, Details }) => (
+        <dialog id={`sheet-${id}`} class="sheet on-cream" aria-labelledby={`sheet-${id}-name`} closedby="any">
+          <div class="flex items-start justify-between gap-6">
+            <h3 id={`sheet-${id}-name`} class="text-h3">
+              {data.name}
+            </h3>
+            <button type="button" class="close" commandfor={`sheet-${id}`} command="close">
+              Close
+            </button>
+          </div>
+          {data.pitch && <p class="mt-3">{data.pitch}</p>}
+          <div class="details mt-6">
+            <Details />
+          </div>
+          {data.stack.length > 0 && (
+            <ul class="stack mt-6" role="list">
+              {data.stack.map((tag) => (
+                <li>{tag}</li>
+              ))}
+            </ul>
+          )}
+          {data.links.length > 0 && (
+            <ul class="mt-6 flex flex-wrap gap-4" role="list">
+              {data.links.map((link) => (
+                <li>
+                  <a href={link.href} target="_blank" rel="noopener" class="underline underline-offset-4">
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </dialog>
+      ))
+  }
+</section>
+
+<script>
+  // Invoker commands are Baseline since December 2025. Older browsers, like Safari before
+  // 26.2 on older iPhones, get the same two commands here so project sheets still open.
+  if (!('commandForElement' in HTMLButtonElement.prototype)) {
+    document.addEventListener('click', (event) => {
+      const button = (event.target as Element).closest('button[commandfor]');
+      const dialog = button && document.getElementById(button.getAttribute('commandfor')!);
+      if (!(dialog instanceof HTMLDialogElement)) return;
+      if (button.getAttribute('command') === 'show-modal') dialog.showModal();
+      if (button.getAttribute('command') === 'close') dialog.close();
+    });
+  }
+</script>
+
+<style>
+  /* Three flop cards, a gap, the turn, a gap, the river. Phones and tablets scroll the row. */
+  .board-area {
+    container-type: inline-size;
+  }
+
+  .board {
+    --gap: 0.75rem;
+    --street-gap: 2rem;
+    --card: 15rem;
+    display: flex;
+    gap: var(--street-gap);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 1rem;
+  }
+
+  @media (min-width: 1024px) {
+    .board {
+      --card: calc((100cqi - 2 * var(--street-gap) - 2 * var(--gap)) / 5);
+      overflow: visible;
+    }
+  }
+
+  .street {
+    flex: none;
+  }
+
+  .street-name {
+    margin-bottom: 0.75rem;
+    font-size: var(--text-small);
+    color: color-mix(in srgb, var(--color-cream) 80%, transparent);
+  }
+
+  .cards {
+    display: flex;
+    gap: var(--gap);
+  }
+
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: var(--card);
+    aspect-ratio: 63 / 88;
+    padding: 4rem 1rem;
+    font-size: var(--text-small);
+    line-height: 1.45;
+    text-align: left;
+    scroll-snap-align: center;
+  }
+
+  .index {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 1.375rem;
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  .index.end {
+    top: auto;
+    left: auto;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    rotate: 180deg;
+  }
+
+  .red .index {
+    color: var(--color-card-red);
+  }
+
+  .name {
+    font-size: 1.125rem;
+    font-weight: 500;
+    line-height: 1.25;
+  }
+
+  .metric {
+    margin-top: 0.25rem;
+    color: var(--color-card-red);
+  }
+
+  .stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .stack > * {
+    border: 1px solid color-mix(in srgb, var(--color-ink) 30%, transparent);
+    border-radius: var(--radius-chip);
+    padding: 0 0.5rem;
+    font-size: 0.8125rem;
+  }
+
+  .sheet {
+    width: min(40rem, calc(100% - 2rem));
+    max-height: calc(100% - 2rem);
+    margin: auto;
+    border: 1px solid var(--color-brass);
+    border-radius: var(--radius-panel);
+    padding: 2rem;
+    box-shadow: 0 30px 60px -20px rgb(0 0 0 / 0.7);
+  }
+
+  .sheet::backdrop {
+    background: color-mix(in srgb, var(--color-room) 70%, transparent);
+  }
+
+  .close {
+    flex: none;
+    border: 1px solid color-mix(in srgb, var(--color-ink) 40%, transparent);
+    border-radius: var(--radius-chip);
+    padding: 0.25rem 1rem;
+  }
+
+  .details :global(p + p) {
+    margin-top: 1em;
+  }
+</style>
