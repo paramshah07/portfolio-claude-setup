@@ -1,24 +1,23 @@
 # content.md
 
-The single source of every word on the site. Replace each TODO, delete any line you don't want shown and keep only numbers you'd defend in an interview. Lines marked CHECK may be confidential, so confirm with that company before publishing them. Lines marked DRAFT are starting points to rewrite in your own voice.
+The single source of every word on the site. Replace each TODO, delete any line you don't want shown and keep only numbers you'd defend in an interview. Lines marked CHECK may be confidential, so confirm with that company before publishing them. Lines marked DRAFT are starting points to rewrite in your own voice. Lines marked PLACEHOLDER are stand-ins that let phase 2 be built. Replace them before launch.
 
 ## site
 - name: Param
 - tagline: Software engineer and quant developer. Waterloo Math, class of 2027. (DRAFT)
 - title: Param | Software engineering and quant development
 - description: TODO (one sentence for search results and link previews)
-- email: TODO
-- github: TODO (https://github.com/...)
-- linkedin: TODO (https://www.linkedin.com/in/...)
+- email: p7shah@uwaterloo.ca
+- github: https://github.com/paramshah07
+- linkedin: https://www.linkedin.com/in/param-shah-param007/
 - resumePath: /resume.pdf
-- url: TODO (your .vercel.app address for now)
+- url: paramshah.com
 
 ## player
-- blurb (DRAFT, three sentences at most): I study mathematics at the University of Waterloo in the Joint Honours Statistics and Computing program and graduate in May 2027. I build systems where research meets production, from trading signals and auction models to AI agents. I'm looking for quant research, quant development and software engineering roles.
+- blurb (DRAFT, three sentences at most): I study mathematics at the University of Waterloo in the Joint Honours Statistics and Computing program and graduate in May 2027. I build systems where research meets production, from trading signals and auction models to AI agents. I'm looking for quant research, quant development and software engineering roles. Something something
 - stats (four at most):
-  - Internships: 6 (CHECK: this counts your current internship in New York)
+  - Internships: 6
   - Students led: 25
-  - Auctions modeled: 1,400+ (CHECK: Capula)
   - Graduating: May 2027
 
 ## hand
@@ -28,20 +27,20 @@ The single source of every word on the site. Replace each TODO, delete any line 
 Suits: spades for quant and trading, hearts for product and full-stack, diamonds for data and research, clubs for infrastructure.
 
 ### TODO (company name)
-- role: Applied software engineering intern
-- start: TODO
+- role: Software Engineering Intern
+- start: Sept 2026
 - end: present
-- location: New York
+- location: New York City, US
 - result: TODO (one sentence)
 - details: TODO (up to three bullets)
 - tags: TODO
-- suit: TODO
+- suit: Hearts
 
 ### Capula Investment Management
-- role: TODO
-- start: TODO
-- end: TODO
-- location: London
+- role: Trading and Research Intern
+- start: June 2026
+- end: Aug 2026
+- location: London, UK
 - result: Built an OAT auction research framework and dashboard that became standard tooling for the researchers on the Euro fixed income relative value desk. (CHECK)
 - details:
   - Covers 1,400+ auctions across 20 years of data and runs ahead of every upcoming auction. (CHECK)
@@ -52,9 +51,9 @@ Suits: spades for quant and trading, hearts for product and full-stack, diamonds
 
 ### Causeway Capital Management
 - role: Quant developer intern
-- start: TODO
-- end: TODO
-- location: TODO
+- start: May 2025
+- end: Aug 2025
+- location: Dallas, US
 - result: Took a short-squeeze signal from raw securities lending data all the way to production as a daily screen for portfolio managers.
 - details:
   - Built it on short interest, utilization and borrow rates, with point-in-time backtesting before it shipped.
@@ -64,22 +63,22 @@ Suits: spades for quant and trading, hearts for product and full-stack, diamonds
 - suit: spades
 
 ### Skopeo AI
-- role: TODO
-- start: Fall 2025 (TODO: exact months)
-- end: TODO
-- location: San Francisco
+- role: Applied AI Engineering Intern
+- start: Sept 2025 
+- end: Feb 2025
+- location: San Francisco, US
 - result: TODO (one sentence on what the agent system let people do)
 - details:
   - Built a planner agent and a RAG context engine on pgvector.
   - Built the agent orchestration layer with retries and fallbacks, tracing and human-in-the-loop checkpoints.
 - tags: TODO
-- suit: hearts
+- suit: Diamonds
 
 ### Siemens Healthineers
-- role: TODO
-- start: TODO
-- end: TODO
-- location: TODO
+- role: Software Engineering Intern
+- start: Jan 2025
+- end: Apr 2025
+- location: Ottawa, Canada
 - result: TODO
 - details:
   - Worked on CI/CD with AWS and Kubernetes. (TODO: add what it changed)
@@ -103,17 +102,20 @@ Exactly five projects: three on the flop, one on the turn and one on the river. 
 ### flop: Qs
 - name: Kalshi and Polymarket arbitrage engine
 - pitch: A cross-venue statistical arbitrage detector and trader for prediction markets.
-- metric: TODO (one number with its unit)
+- metric: Metric placeholder (PLACEHOLDER: one number with its unit)
 - stack: TODO
-- links: TODO
+- links:
+  - GitHub: https://example.com/arbitrage-engine (PLACEHOLDER)
 - details: Live system stats, model and market selection and liquidity-aware sizing across both venues. (TODO: expand)
 
 ### flop: Js
 - name: Open-source trading library
 - pitch: An algorithmic trading and backtesting framework published on PyPI.
-- metric: TODO (for example monthly downloads or GitHub stars)
+- metric: Metric placeholder (PLACEHOLDER: for example monthly downloads or GitHub stars)
 - stack: Python
-- links: TODO (PyPI and GitHub)
+- links:
+  - PyPI: https://example.com/trading-library/pypi (PLACEHOLDER)
+  - GitHub: https://example.com/trading-library/github (PLACEHOLDER)
 - details: TODO
 
 ### flop: 7d
@@ -121,23 +123,26 @@ Exactly five projects: three on the flop, one on the turn and one on the river. 
 - pitch: Replaced paper and spreadsheets with one system for sales, inventory, accounts, staff and production.
 - metric: Weekly sales outreach up from 10 to 50 prospects, converting around 20%
 - stack: TODO (n8n plus what else)
-- links: TODO (a write-up or a demo video, since the system itself is private)
+- links:
+  - Write-up: https://example.com/ai-native-erp (PLACEHOLDER: a write-up or a demo video, since the system itself is private)
 - details: Covers sales leads, inventory, accounts, manufacturing output and staff attendance and productivity. n8n automations bring in new leads every day, and the business now has analytics on its supply chain, production lines and shipments.
 
 ### turn: 2c
 - name: Cross-asset macro signals research
 - pitch: Macro signals tested on S&P 500 sector spread returns with Newey-West-adjusted regressions.
-- metric: TODO
+- metric: Metric placeholder (PLACEHOLDER)
 - stack: TODO
-- links: TODO
+- links:
+  - Write-up: https://example.com/macro-signals (PLACEHOLDER)
 - details: TODO
 
 ### river: Ts
 - name: This site
 - pitch: The table you're sitting at, built with Astro, React Three Fiber and GSAP. (Once phase 2 ships, add the hand evaluator and exact equity math written from scratch.)
-- metric: TODO (after phase 2, for example the evaluator's test count or frame time)
+- metric: Metric placeholder (PLACEHOLDER: after phase 2, for example the evaluator's test count or frame time)
 - stack: Astro, React Three Fiber, GSAP
-- links: TODO (repository)
+- links:
+  - Repository: https://example.com/this-site (PLACEHOLDER: the repository is private for now)
 - details: TODO
 
 ## table
@@ -146,9 +151,9 @@ Exactly five projects: three on the flop, one on the turn and one on the river. 
 - dates: January 2025 to January 2026
 - summary: Founded the club's quantitative research division and grew it to 25 students across three teams. (DRAFT)
 - teams (three, with member counts adding up to 25):
-  - TODO: team name, member count
-  - TODO: team name, member count
-  - TODO: team name, member count
+  - Team A: 9 (PLACEHOLDER)
+  - Team B: 8 (PLACEHOLDER)
+  - Team C: 8 (PLACEHOLDER)
 
 ## showdown
 - line (DRAFT): If you're hiring for quant or software engineering roles, I'd like to hear from you.
