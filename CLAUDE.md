@@ -64,7 +64,7 @@ Each spec loads automatically when you open files in its area. Read it yourself 
 ## Rules for every session
 
 - Every word on the page comes from content.md and is real HTML. Text in WebGL is limited to chip and card labels that also exist in the DOM. Never invent copy, numbers, employers or links.
-- The page is fully readable and navigable with JavaScript off. The hero plate is preloaded and is the largest contentful paint.
+- The page is fully readable and navigable with JavaScript off. The hero h1 is the largest contentful paint, because Chrome skips images that fill the viewport. The hero plate is preloaded and has to be in the first frame.
 - The stage loads after first paint, stops rendering when offscreen or when the tab is hidden and falls back to static images when WebGL2 is missing or the context is lost.
 - Phones under 768px, low-power devices and prefers-reduced-motion get the static tier: the still plates, 2D card flips and no WebGL.
 - Budgets: 50 KB of gzipped JS before the stage loads, hero plate under 250 KB on desktop and 120 KB on phones, 60 fps on a recent laptop, no layout shift.
