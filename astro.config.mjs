@@ -2,6 +2,7 @@ import { defineConfig, fontProviders } from 'astro/config';
 import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
+import buildStats from './src/integrations/build-stats.ts';
 import profile from './src/content/profile.json' with { type: 'json' };
 
 export default defineConfig({
@@ -9,7 +10,7 @@ export default defineConfig({
   site: profile.site.url,
   // One page, so a separate stylesheet only adds a render-blocking round trip.
   build: { inlineStylesheets: 'always' },
-  integrations: [react(), sitemap()],
+  integrations: [react(), sitemap(), buildStats()],
   vite: { plugins: [tailwindcss()] },
   fonts: [
     {
