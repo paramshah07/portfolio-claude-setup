@@ -3,7 +3,7 @@
 // still below the fold, so a slow or failed load leaves everything visible.
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { SECTIONS, activeSection, scrollProgress, tier } from '../../lib/state';
+import { SECTIONS, activeSection, scrollProgress, street, tier } from '../../lib/state';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -36,6 +36,10 @@ else if (cue) {
 }
 
 const row = document.querySelector('#hand-history .row');
+const board = document.querySelector('#the-board .board');
+
+// The Board is fully dealt from the start unless it deals as you scroll.
+if (reduce || !belowFold(board)) street.set('river');
 
 // Opacity only, never visibility, so keyboard focus can still reach content before it reveals.
 if (!reduce) {
@@ -71,7 +75,6 @@ if (!reduce) {
   // The Board deals as you scroll: a burn card slides off, then the flop together, and the
   // same for the turn and the river. One paused timeline keeps the streets in order even when
   // a fast scroll crosses all three triggers at once.
-  const board = document.querySelector('#the-board .board');
   if (belowFold(board)) {
     const deal = gsap.timeline({ paused: true });
     const streets = [...board.querySelectorAll('.street')];
@@ -83,6 +86,7 @@ if (!reduce) {
         .addLabel(`street-${i}`);
     });
     let dealt = -1;
+    const landed = ['flop', 'turn', 'river'] as const;
     streets.forEach((_, i) => {
       ScrollTrigger.create({
         trigger: board,
@@ -92,7 +96,7 @@ if (!reduce) {
           if (i <= dealt) return;
           dealt = i;
           const time = deal.labels[`street-${i}`];
-          gsap.to(deal, { time, duration: time - deal.time(), ease: 'none', overwrite: true });
+          gsap.to(deal, { time, duration: time - deal.time(), ease: 'none', overwrite: true, onComplete: () => street.set(landed[i]) });
         },
       });
     });

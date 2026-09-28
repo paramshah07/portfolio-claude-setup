@@ -1,5 +1,6 @@
 // State shared by the page and the islands. Safe to import during SSR.
 import { atom } from 'nanostores';
+import type { Street } from '../poker/api';
 
 export const SECTIONS = [
   { id: 'the-deal', name: 'The Deal' },
@@ -16,10 +17,9 @@ export type Tier = 'high' | 'medium' | 'low' | 'static';
 /** Scroll through the whole page, 0 to 1. */
 export const scrollProgress = atom(0);
 export const activeSection = atom<SectionId>('the-deal');
-/** Whether the performance HUD is open. */
-export const hud = atom(false);
-/** Whether the command palette is open. */
-export const palette = atom(false);
+export { palette } from './palette';
+/** How far The Board has dealt. Its deal in the motion pass writes this, and the equity readout follows it. */
+export const street = atom<Street>('preflop');
 
 export function pickTier(env: { width: number; reducedMotion: boolean; webgl2: boolean; memory?: number }): Tier {
   // deviceMemory only exists in Chromium (in GB, capped at 8). Missing means unknown, not low.
