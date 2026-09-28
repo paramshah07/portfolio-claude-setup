@@ -13,10 +13,10 @@ const chips = [
 
 <section id="showdown" class="lamp-pool px-6 py-16 text-center md:px-12 md:py-24">
   <h2 class="text-h2">Showdown</h2>
-  {showdown && <p class="mx-auto mt-6 max-w-[48ch] text-balance">{showdown}</p>}
+  {showdown && <p class="mx-auto mt-6 max-w-[48ch] text-balance" data-follow>{showdown}</p>}
   {
     chips.length > 0 && (
-      <ul class="mt-12 flex flex-wrap justify-center gap-6" role="list">
+      <ul class="mt-12 flex flex-wrap justify-center gap-6" role="list" data-follow>
         {chips.map((chip) => (
           <li>
             <a class="chip" href={chip.href} style={`--chip: var(--color-${chip.color}); --insert: var(--color-${chip.insert ?? 'cream'})`} {...chip.attrs}>
@@ -28,7 +28,7 @@ const chips = [
     )
   }
   {site.email && <p class="copied mt-6 text-small" role="status" data-copied />}
-  <p class="mt-4 text-small text-cream/80">Press <kbd><span data-mod>⌘</span>K</kbd> for everything else</p>
+  <p class="hint mt-4 text-small text-cream/80" data-follow>Press <kbd><span data-mod>⌘</span>K</kbd> for everything else</p>
 </section>
 
 <script>
@@ -59,11 +59,40 @@ const chips = [
     box-shadow: 0 14px 26px -12px rgb(0 0 0 / 0.75);
     color: var(--color-ink);
     font-size: 1.125rem;
+    transition:
+      translate 0.35s cubic-bezier(0.215, 0.61, 0.355, 1),
+      box-shadow 0.35s cubic-bezier(0.215, 0.61, 0.355, 1);
   }
 
   .chip:hover span {
     text-decoration: underline;
     text-underline-offset: 4px;
+  }
+
+  /* Lifts off the felt on hover and presses down into it. Reduced motion keeps only the shadow. */
+  .chip:hover {
+    translate: 0 -4px;
+    box-shadow: 0 22px 32px -14px rgb(0 0 0 / 0.75);
+  }
+
+  .chip:active {
+    translate: 0 1px;
+    box-shadow: 0 6px 12px -8px rgb(0 0 0 / 0.8);
+    transition-duration: 0.1s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .chip,
+    .chip:hover,
+    .chip:active {
+      translate: none;
+      transition-duration: 0.15s;
+    }
+  }
+
+  /* The palette needs JavaScript, so the hint goes with it. */
+  :global(html:not(.js)) .hint {
+    display: none;
   }
 
   @media (max-width: 767px) {

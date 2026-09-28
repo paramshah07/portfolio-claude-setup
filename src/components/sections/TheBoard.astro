@@ -66,6 +66,7 @@ const face = (card: string) => {
                   );
                 })}
             </ul>
+            <span class="burn" aria-hidden="true" />
           </div>
         ))
       }
@@ -151,7 +152,27 @@ const face = (card: string) => {
   }
 
   .street {
+    position: relative;
     flex: none;
+  }
+
+  /* The face-down card burned before each street. It only shows during the deal. */
+  .burn {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: var(--card);
+    aspect-ratio: 63 / 88;
+    border: 0.5rem solid var(--color-cream);
+    border-radius: var(--radius-card);
+    background: repeating-linear-gradient(
+      45deg,
+      var(--color-card-red) 0 0.25rem,
+      color-mix(in srgb, var(--color-card-red), black 25%) 0.25rem 0.5rem
+    );
+    box-shadow: 0 16px 28px -14px rgb(0 0 0 / 0.65);
+    visibility: hidden;
+    pointer-events: none;
   }
 
   .street-name {
@@ -239,6 +260,45 @@ const face = (card: string) => {
 
   .sheet::backdrop {
     background: color-mix(in srgb, var(--color-room) 70%, transparent);
+  }
+
+  /* A short fade and scale both ways. CSS rather than GSAP, because Escape, a click outside and
+     the close button all close the dialog natively, and only a transition can follow them out. */
+  .sheet,
+  .sheet::backdrop {
+    transition:
+      opacity 0.35s cubic-bezier(0.215, 0.61, 0.355, 1),
+      scale 0.35s cubic-bezier(0.215, 0.61, 0.355, 1),
+      overlay 0.35s allow-discrete,
+      display 0.35s allow-discrete;
+  }
+
+  .sheet:not([open]),
+  .sheet:not([open])::backdrop {
+    opacity: 0;
+  }
+
+  .sheet:not([open]) {
+    scale: 0.96;
+  }
+
+  @starting-style {
+    .sheet[open],
+    .sheet[open]::backdrop {
+      opacity: 0;
+    }
+
+    .sheet[open] {
+      scale: 0.96;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sheet,
+    .sheet::backdrop {
+      scale: none !important;
+      transition-duration: 0.15s;
+    }
   }
 
   .close {

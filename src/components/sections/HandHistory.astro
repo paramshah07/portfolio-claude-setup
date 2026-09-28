@@ -61,7 +61,7 @@ const title = (suit: string) => suit[0].toUpperCase() + suit.slice(1);
     </ol>
     {
       suits && (
-        <ul class="legend" role="list">
+        <ul class="legend" role="list" data-follow>
           {Object.entries(suits).map(([suit, meaning]) => (
             <li>
               <span aria-hidden="true">{PIPS[suit as Suit]}</span>
@@ -75,9 +75,10 @@ const title = (suit: string) => suit[0].toUpperCase() + suit.slice(1);
 </section>
 
 <script>
-  // Flips a card to its back and back again. The animated flip comes with the motion pass.
+  // Flips a card to its back and back again. Clicks on the back flip it too, and motion.ts
+  // animates the turn from its own listener, which runs after this one.
   for (const face of document.querySelectorAll('#hand-history button.face')) {
-    face.addEventListener('click', () => {
+    face.parentElement!.addEventListener('click', () => {
       face.setAttribute('aria-expanded', String(face.getAttribute('aria-expanded') !== 'true'));
     });
   }
@@ -210,11 +211,30 @@ const title = (suit: string) => suit[0].toUpperCase() + suit.slice(1);
 
   :global(.js) .back {
     visibility: hidden;
-    pointer-events: none;
   }
 
   :global(.js) .face[aria-expanded='true'] + .back {
     visibility: visible;
+  }
+
+  /* Focus stays on the face, so the back wears the ring while it's showing. */
+  .face[aria-expanded='true']:focus-visible + .back {
+    outline: 2px solid var(--color-brass);
+    outline-offset: 3px;
+  }
+
+  /* The 3D flip from motion.ts: the back is printed on the far side and the slot turns over. */
+  .flip-3d .slot {
+    transform-style: preserve-3d;
+  }
+
+  .flip-3d .face,
+  .flip-3d .back {
+    backface-visibility: hidden;
+  }
+
+  .flip-3d .back {
+    transform: rotateY(180deg);
   }
 
   .legend {

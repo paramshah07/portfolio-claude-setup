@@ -11,13 +11,13 @@ const byline = [table.role, table.dates].filter(Boolean).join(' · ');
   <div class="mx-auto grid max-w-7xl items-end gap-16 md:grid-cols-2">
     <div>
       <h2 class="text-h2">The Table</h2>
-      {table.org && <h3 class="mt-8 text-h3">{table.org}</h3>}
-      {byline && <p class="mt-2 text-cream/80">{byline}</p>}
-      {table.summary && <p class="mt-6 max-w-[60ch]">{table.summary}</p>}
+      {table.org && <h3 class="mt-8 text-h3" data-follow>{table.org}</h3>}
+      {byline && <p class="mt-2 text-cream/80" data-follow>{byline}</p>}
+      {table.summary && <p class="mt-6 max-w-[60ch]" data-follow>{table.summary}</p>}
     </div>
     {
       table.teams.length > 0 && (
-        <ul class="stacks" role="list">
+        <ul class="stacks" role="list" data-follow>
           {table.teams.map((team, i) => (
             <li>
               <span

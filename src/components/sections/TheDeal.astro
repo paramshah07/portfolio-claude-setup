@@ -18,6 +18,14 @@ const { site } = (await getEntry('profile', 'main'))!.data;
   <span class="cue" aria-hidden="true"></span>
 </section>
 
+<script>
+  // Motion is extra: GSAP arrives once the page has loaded and gone idle, never with first paint.
+  const motion = () => void import('./motion');
+  addEventListener('load', () => (window.requestIdleCallback ? requestIdleCallback(motion, { timeout: 2000 }) : setTimeout(motion, 200)), {
+    once: true,
+  });
+</script>
+
 <style>
   /* The plate sits in the fixed stage layer behind the page. This darkens the left side
      for the copy and adds the vignette every view gets. */

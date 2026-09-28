@@ -60,14 +60,24 @@ const links = [
 
 <style>
   .nav {
-    background: color-mix(in srgb, var(--color-rail) 90%, transparent);
+    background-color: color-mix(in srgb, var(--color-rail) 90%, transparent);
     backdrop-filter: blur(8px);
+    /* power2.inOut */
+    transition:
+      background-color 0.5s cubic-bezier(0.455, 0.03, 0.515, 0.955),
+      backdrop-filter 0.5s cubic-bezier(0.455, 0.03, 0.515, 0.955);
   }
 
   /* Without JavaScript the nav stays solid, so it never sits unreadable over cream. */
   :global(.js) .nav:not(.is-solid) {
-    background: transparent;
-    backdrop-filter: none;
+    background-color: transparent;
+    backdrop-filter: blur(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nav {
+      transition-duration: 0.15s;
+    }
   }
 
   .link:hover,
