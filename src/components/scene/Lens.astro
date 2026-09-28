@@ -1,0 +1,22 @@
+---
+// The vignette and film grain every tier gets, over the plate and the WebGL canvas alike.
+---
+
+<div class="lens"></div>
+
+<style>
+  .lens {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 110% 100% at 50% 45%, transparent 55%, color-mix(in srgb, var(--color-room) 55%, transparent));
+  }
+
+  /* Fine static grain at about 4%. Nothing loops, so it doesn't crawl. */
+  .lens::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+</style>
