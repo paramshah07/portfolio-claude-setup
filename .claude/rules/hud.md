@@ -4,6 +4,7 @@ paths:
   - "src/lib/poker/**"
   - "src/workers/**"
   - "tests/poker/**"
+  - "src/integrations/**"
 ---
 
 # HUD panels and poker math (phase 2)
