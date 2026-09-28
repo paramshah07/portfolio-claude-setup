@@ -21,8 +21,8 @@ export const TABLE = {
 export const SEATS = 10;
 
 export const SPOTS = {
-  /** Where the hole cards land, in front of the player. */
-  seat: new THREE.Vector3(0, 0, 0.3),
+  /** Where the hole cards land, in front of the player and behind the betting line. */
+  seat: new THREE.Vector3(0, 0, 0.33),
   /** The middle of the five board cards. */
   board: new THREE.Vector3(0, 0, -0.04),
   /** Where the deck sits, to the dealer's left of the board and a little toward the player. */
@@ -30,5 +30,5 @@ export const SPOTS = {
   /** Where the burn cards go. */
   muck: new THREE.Vector3(0.39, 0, -0.14),
   /** The first of the team stacks, which run toward +x to the player's right. */
-  stacks: new THREE.Vector3(0.17, 0, 0.3),
+  stacks: new THREE.Vector3(0.17, 0, 0.32),
 };

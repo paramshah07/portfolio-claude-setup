@@ -72,7 +72,7 @@ export function Chips({ teams }: Pick<StageProps, 'teams'>) {
             </Instances>
           ),
       )}
-      {teams.map((team, i) => (
+      {stacks.slice(0, teams.length).map((stack, i) => (
         <Text
           key={i}
           font={garamond}
@@ -82,11 +82,11 @@ export function Chips({ teams }: Pick<StageProps, 'teams'>) {
           anchorX="center"
           anchorY="middle"
           color="#231E18"
-          position={[SPOTS.stacks.x + i * SPACING, team.members * CHIP.height + 0.0002, SPOTS.stacks.z]}
+          position={[stack.x, stack.count * CHIP.height + 0.0002, stack.z]}
           rotation-x={-Math.PI / 2}
           receiveShadow
         >
-          {`${team.name}\n${team.members}`}
+          {`${teams[i].name}\n${teams[i].members}`}
         </Text>
       ))}
     </group>
@@ -100,13 +100,12 @@ const noise = (n: number) => {
 };
 
 // A cylinder whose UVs put the edge in the bottom fifth of the texture and the faces in the rest,
-// so one canvas texture covers the whole chip and each clay is a single draw.
+// so one canvas texture covers the whole chip.
 function chipGeometry() {
   const g = new THREE.CylinderGeometry(CHIP.radius, CHIP.radius, CHIP.height, 48);
   const uv = g.attributes.uv as THREE.BufferAttribute;
   const edge = 49 * 2; // the torso's vertices come first: (radial + 1) * (height + 1)
   for (let i = 0; i < uv.count; i++) uv.setY(i, i < edge ? uv.getY(i) * 0.2 : 0.2 + uv.getY(i) * 0.8);
-  g.clearGroups();
   return g;
 }
 

@@ -166,7 +166,7 @@ function printedLines() {
   // Table space to canvas: +z is down the canvas, toward the player.
   const at = (x: number, z: number): [number, number] => [(x + HALF + FELT) * scale, (z + FELT) * scale];
 
-  const r = FELT - 0.17;
+  const r = FELT - 0.22;
   g.beginPath();
   g.arc(...at(HALF, 0), r * scale, -Math.PI / 2, Math.PI / 2);
   g.arc(...at(-HALF, 0), r * scale, Math.PI / 2, (3 * Math.PI) / 2);
