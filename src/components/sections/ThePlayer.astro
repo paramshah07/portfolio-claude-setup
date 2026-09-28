@@ -13,10 +13,11 @@ const { player } = (await getEntry('profile', 'main'))!.data;
     {
       player.stats.length > 0 && (
         <div class="stats self-start" data-follow>
-          <div class="bar" aria-hidden="true">
-            <span />
-            <span />
-            <span />
+          <div class="bar">
+            <span aria-hidden="true" />
+            <span aria-hidden="true" />
+            <span aria-hidden="true" />
+            <button type="button" class="hud-toggle" aria-pressed="false" data-hud-toggle hidden>Performance HUD</button>
           </div>
           <dl>
             {player.stats.map((stat) => (
@@ -57,6 +58,16 @@ const { player } = (await getEntry('profile', 'main'))!.data;
     height: 0.5rem;
     border-radius: var(--radius-chip);
     background: color-mix(in srgb, var(--color-brass) 70%, transparent);
+  }
+
+  /* Hidden until the performance HUD renders something. */
+  .hud-toggle {
+    margin-left: auto;
+    color: color-mix(in srgb, var(--color-cream) 75%, transparent);
+  }
+
+  .hud-toggle[aria-pressed='true'] {
+    color: var(--color-brass);
   }
 
   dl {

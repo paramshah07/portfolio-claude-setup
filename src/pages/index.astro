@@ -12,6 +12,8 @@ import Footer from '../components/sections/Footer.astro';
 import Stage from '../components/scene/Stage';
 import Lens from '../components/scene/rig/Lens.astro';
 import CommandPalette from '../components/palette/CommandPalette';
+import PerfHud from '../components/hud/PerfHud';
+import ThisTablePanel from '../components/hud/ThisTablePanel';
 import { checkDeck } from '../lib/deck';
 
 // Sections read their own content, so this page only composes them. The islands get what
@@ -45,6 +47,8 @@ checkDeck(hand.hole, board);
   </main>
   <Footer />
   <CommandPalette client:idle site={site} />
+  <PerfHud client:idle />
+  <ThisTablePanel client:idle />
 </Base>
 
 <style>
