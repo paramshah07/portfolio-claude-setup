@@ -8,11 +8,11 @@ const { player } = (await getEntry('profile', 'main'))!.data;
   <div class="on-cream mx-auto grid max-w-6xl gap-12 rounded-panel p-8 shadow-2xl md:grid-cols-[minmax(0,1fr)_20rem] md:p-16">
     <div>
       <h2 class="text-h2">The Player</h2>
-      {player.blurb && <p class="mt-6 max-w-[62ch]">{player.blurb}</p>}
+      {player.blurb && <p class="mt-6 max-w-[62ch]" data-follow>{player.blurb}</p>}
     </div>
     {
       player.stats.length > 0 && (
-        <div class="stats self-start">
+        <div class="stats self-start" data-follow>
           <div class="bar" aria-hidden="true">
             <span />
             <span />
@@ -73,6 +73,11 @@ const { player } = (await getEntry('profile', 'main'))!.data;
 
   .row + .row {
     border-top: 1px solid color-mix(in srgb, var(--color-cream) 12%, transparent);
+  }
+
+  /* Right-aligned, so a value counting up grows toward its label. */
+  dt + dd {
+    text-align: right;
   }
 
   dt {
