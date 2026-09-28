@@ -3,6 +3,7 @@ import { Command } from 'cmdk';
 import { useStore } from '@nanostores/react';
 import type { CollectionEntry } from 'astro:content';
 import { SECTIONS, palette, type SectionId } from '../../lib/state';
+import { hud, thisTableOpen } from '../../lib/state/hud';
 import './palette.css';
 
 // The section names are proper names, so search also matches the plain word for each.
@@ -147,6 +148,16 @@ export default function CommandPalette({ site }: { site: CollectionEntry<'profil
               ))}
             </Command.Group>
           )}
+          <Command.Group heading="Table">
+            <Command.Item value="Show performance HUD" keywords={['performance', 'fps', 'frame rate', 'stats']} onSelect={() => (close(), hud.set(true))}>
+              Show performance HUD
+              <kbd aria-hidden="true">H</kbd>
+            </Command.Item>
+            <Command.Item value="How this table works" keywords={['about', 'architecture', 'built', 'source']} onSelect={() => (close(), thisTableOpen.set(true))}>
+              How this table works
+              {enter}
+            </Command.Item>
+          </Command.Group>
         </Command.List>
         <p role="status" className="sr-only">
           {copied && 'Email copied'}

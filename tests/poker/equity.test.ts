@@ -151,7 +151,7 @@ test('outs appear on the flop and turn only', () => {
 
 test("Param's river is a royal flush that wins all 990 matchups", () => {
   const result = computeEquity(hole, river);
-  expect(result.hand).toBe('Royal flush');
+  expect(result.madeHand).toBe('Royal flush');
   expect(result.win).toBe(1);
 });
 

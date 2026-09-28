@@ -6,7 +6,7 @@ A personal portfolio for software engineering and quant roles, built as one hand
 
 The look comes from the frames in /reference, which are stills from an AI-generated concept video. Match their lighting, materials and lens. Never copy their text: it is garbled, and some of it is blackjack ("Dealer busts", "Double down", "Stand"), which must never appear on this site. The video's "Login" and "Sign up" links don't exist here either.
 
-## Current phase: 1
+## Current phase: 2
 
 Build only what belongs to the current phase unless the task names a later one. Every phase has to leave the site shippable, and later work must never block earlier work.
 
@@ -19,7 +19,7 @@ Build only what belongs to the current phase unless the task names a later one. 
 - Astro with static output and TypeScript, deployed on Vercel. Content collections with zod validate the typed content in src/content.
 - Tailwind for layout. Design tokens are CSS custom properties in src/styles/tokens.css.
 - React only inside islands: Stage (the WebGL scene, client:idle: it renders nothing on the server and dynamically imports the scene only after the hero plate has loaded, so React and three.js arrive after first paint), CommandPalette (client:idle) and the HUD panels (client:idle, phase 2).
-- Nanostores with @nanostores/react for state shared between the page and the islands: scroll progress, active section, quality tier, sound and HUD visibility. Stores live in src/lib/state.
+- Nanostores with @nanostores/react for state shared between the page and the islands: scroll progress, active section, quality tier and sound, plus HUD visibility, the street The Board has dealt, whether the This Table panel is open and the stage's render stats. Stores live in src/lib/state.
 - three, @react-three/fiber, @react-three/drei and @react-three/postprocessing, imported only inside src/components/scene and src/components/hud.
 - Phase 3 only: three-custom-shader-material for the card bend, @react-three/rapier for chip physics (lazy-loaded) and @sparkjsdev/spark for the splat room.
 - GSAP with ScrollTrigger, ScrollSmoother, SplitText, Flip and CustomEase for all motion. Follow the GSAP skills in .claude/skills. No other animation library.
@@ -54,8 +54,9 @@ Sampled from the reference frames, except lamp, which was chosen.
 | Shell and state | src/pages, src/layouts, src/styles, src/lib/state, astro.config.mjs | .claude/rules/shell.md | shell |
 | Content | content.md, src/content | .claude/rules/content-model.md | shell |
 | Nav and sections | src/components/nav, src/components/sections | .claude/rules/sections.md | sections |
-| 3D stage | src/components/scene, scripts/make-depth.mjs, scripts/make-card-faces.mjs | .claude/rules/scene.md | scene |
-| HUDs and poker math | src/components/hud, src/lib/poker, src/workers, tests/poker | .claude/rules/hud.md | hud |
+| Scene objects | src/components/scene/objects, scripts/make-card-faces.mjs, public/textures, public/cards | .claude/rules/scene.md | scene objects |
+| Scene rig | src/components/scene/rig, scripts/make-depth.mjs, public/hdri, public/luts, the room plate (public/plates/room-16x9.jpg) | .claude/rules/scene.md | scene rig |
+| HUDs and poker math | src/components/hud, src/lib/poker, src/workers, tests/poker, src/integrations | .claude/rules/hud.md | hud |
 | Palette | src/components/palette | .claude/rules/palette.md | palette |
 | Sound | src/lib/audio, public/audio | .claude/rules/audio.md | audio |
 

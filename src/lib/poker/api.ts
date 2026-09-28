@@ -21,8 +21,9 @@ export interface EquityResult {
   loss: number;
   equity: number; // win plus half the ties
   exact: true; // preflop is precomputed and every later street is enumerated
+  interval?: readonly [low: number, high: number]; // only an estimate has one, so it's never set
   matchups: number; // how many pairs of runout and opponent hand were counted
-  hand: string; // the hero's made hand, like "Two pair, aces and kings"
+  madeHand: string; // the hero's made hand, like "Two pair, aces and kings"
   outs?: OutGroup[]; // on the flop and turn, strongest first
 }
 
@@ -92,7 +93,7 @@ function result(hole: Card[], board: Card[], tally: Tally, outs?: OutGroup[]): E
     equity: (tally.win + tally.tie / 2) / matchups,
     exact: true,
     matchups,
-    hand: handName(evaluate(...words([...hole, ...board]))),
+    madeHand: handName(evaluate(...words([...hole, ...board]))),
     ...(outs && { outs }),
   };
 }

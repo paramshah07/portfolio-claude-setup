@@ -1,6 +1,9 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { getCollection, getEntry, render } from 'astro:content';
 import { PIPS, SUIT_OF } from '../../lib/deck';
+import EquityReadout from '../hud/EquityReadout';
+
+const { hand } = (await getEntry('profile', 'main'))!.data;
 
 const projects = await Promise.all(
   (await getCollection('board'))
@@ -71,6 +74,7 @@ const face = (card: string) => {
         ))
       }
     </div>
+    <EquityReadout client:idle hole={hand.hole} board={projects.map(({ data }) => ({ street: data.street, card: data.card }))} />
   </div>
 
   {
