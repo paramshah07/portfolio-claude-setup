@@ -1,0 +1,47 @@
+---
+// Owns the head for the one page. Every word in it comes from content.md.
+import { getEntry } from 'astro:content';
+import { Font } from 'astro:assets';
+import '../styles/global.css';
+
+const { site } = (await getEntry('profile', 'main'))!.data;
+const title = site.title ?? site.name;
+// Canonical and social tags need absolute URLs, so they wait for site.url in content.md.
+const absolute = (path: string) => (site.url ? new URL(path, site.url).href : undefined);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline>document.documentElement.classList.add('js');</script>
+    <title>{title}</title>
+    {site.description && <meta name="description" content={site.description} />}
+    {site.url && <link rel="canonical" href={absolute('/')} />}
+    <meta name="theme-color" content="#1B1009" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preload" as="image" type="image/avif" href="/plates/hero-desktop.avif" media="(min-width: 768px)" fetchpriority="high" />
+    <link rel="preload" as="image" type="image/avif" href="/plates/hero-phone.avif" media="(max-width: 767px)" fetchpriority="high" />
+    <Font cssVariable="--font-garamond" preload />
+    <Font cssVariable="--font-plex-mono" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    {site.description && <meta property="og:description" content={site.description} />}
+    {
+      site.url && (
+        <>
+          <meta property="og:url" content={absolute('/')} />
+          <meta property="og:image" content={absolute('/og.jpg')} />
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="630" />
+        </>
+      )
+    }
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <a class="skip-link" href="#the-player">Skip to The Player</a>
+    <slot />
+  </body>
+</html>

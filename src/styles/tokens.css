@@ -1,0 +1,46 @@
+/* Design tokens. `static` emits every token, including ones only component styles use. */
+@theme static {
+  /* Sampled from the reference frames, except lamp, which was chosen. */
+  --color-felt: #2e4c3a;
+  --color-felt-shadow: #172c1e;
+  --color-cream: #f3eee2;
+  --color-ink: #231e18;
+  --color-brass: #ad9773;
+  --color-panel: #363430;
+  --color-rail: #3a3329;
+  --color-room: #1b1009;
+  --color-card-red: #9b3a2e;
+  --color-lamp: #f2d3a2;
+
+  --text-display: clamp(3rem, 7vw, 5.5rem);
+  --text-display--line-height: 1.02;
+  --text-h2: 2.75rem;
+  --text-h2--line-height: 1.1;
+  --text-h3: 1.75rem;
+  --text-h3--line-height: 1.2;
+  --text-body: 1.125rem;
+  --text-body--line-height: 1.65;
+  --text-small: 0.875rem;
+  --text-small--line-height: 1.5;
+
+  /* 4px base. The scale is steps 1, 2, 3, 4, 6, 8, 12, 16, 24 and 32, so 4px to 128px. */
+  --spacing: 0.25rem;
+
+  --radius-card: 10px;
+  --radius-panel: 14px;
+  --radius-chip: 9999px;
+}
+
+/* Font variables come from Astro's <Font> component. */
+@theme inline {
+  --font-serif: var(--font-garamond);
+  --font-mono: var(--font-plex-mono);
+}
+
+:root {
+  --z-stage: 0;
+  --z-content: 10;
+  --z-nav: 20;
+  --z-overlays: 30;
+  --z-palette: 40;
+}
