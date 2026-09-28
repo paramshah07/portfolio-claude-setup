@@ -18,7 +18,7 @@ Build only what belongs to the current phase unless the task names a later one. 
 
 - Astro with static output and TypeScript, deployed on Vercel. Content collections with zod validate the typed content in src/content.
 - Tailwind for layout. Design tokens are CSS custom properties in src/styles/tokens.css.
-- React only inside islands: Stage (the WebGL scene, client:only="react"), CommandPalette (client:idle) and the HUD panels (client:idle, phase 2).
+- React only inside islands: Stage (the WebGL scene, client:idle: it renders nothing on the server and dynamically imports the scene only after the hero plate has loaded, so React and three.js arrive after first paint), CommandPalette (client:idle) and the HUD panels (client:idle, phase 2).
 - Nanostores with @nanostores/react for state shared between the page and the islands: scroll progress, active section, quality tier, sound and HUD visibility. Stores live in src/lib/state.
 - three, @react-three/fiber, @react-three/drei and @react-three/postprocessing, imported only inside src/components/scene and src/components/hud.
 - Phase 3 only: three-custom-shader-material for the card bend, @react-three/rapier for chip physics (lazy-loaded) and @sparkjsdev/spark for the splat room.
@@ -64,7 +64,7 @@ Each spec loads automatically when you open files in its area. Read it yourself 
 ## Rules for every session
 
 - Every word on the page comes from content.md and is real HTML. Text in WebGL is limited to chip and card labels that also exist in the DOM. Never invent copy, numbers, employers or links.
-- The page is fully readable and navigable with JavaScript off. The hero plate is preloaded and is the largest contentful paint.
+- The page is fully readable and navigable with JavaScript off. The hero h1 is the largest contentful paint, because Chrome skips images that fill the viewport. The hero plate is preloaded and has to be in the first frame.
 - The stage loads after first paint, stops rendering when offscreen or when the tab is hidden and falls back to static images when WebGL2 is missing or the context is lost.
 - Phones under 768px, low-power devices and prefers-reduced-motion get the static tier: the still plates, 2D card flips and no WebGL.
 - Budgets: 50 KB of gzipped JS before the stage loads, hero plate under 250 KB on desktop and 120 KB on phones, 60 fps on a recent laptop, no layout shift.

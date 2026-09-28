@@ -1,0 +1,84 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+@layer base {
+  html {
+    background: var(--color-room);
+    color: var(--color-cream);
+    font-family: var(--font-garamond);
+    /* Anchored sections stop below the fixed nav. */
+    scroll-padding-top: 5rem;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-weight: 500;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus, var(--color-brass));
+    outline-offset: 3px;
+  }
+}
+
+/* Ink on cream panels. Brass is under 3:1 against cream, so focus rings inside darken. */
+@utility on-cream {
+  background-color: var(--color-cream);
+  color: var(--color-ink);
+  --focus: color-mix(in oklab, var(--color-brass), var(--color-ink) 30%);
+}
+
+/* The table under every section after the hero: felt with darker edges. One wrapper carries
+   it, because stacked sections at fractional heights leave hairline seams between them. */
+@utility felt {
+  background:
+    linear-gradient(90deg, var(--color-felt-shadow), transparent 22% 78%, var(--color-felt-shadow)),
+    var(--color-felt);
+}
+
+/* Each section's pool of lamp light, faded out well before its edges. */
+@utility lamp-pool {
+  background: radial-gradient(
+    ellipse 60% 45% at 50% 45%,
+    color-mix(in srgb, var(--color-lamp) 7%, transparent),
+    transparent 70%
+  );
+}
+
+/* Poker card stock, shared by the Hand History and Board cards. */
+@utility card-stock {
+  border-radius: var(--radius-card);
+  background: var(--color-cream);
+  color: var(--color-ink);
+  box-shadow:
+    0 1px 1px rgb(0 0 0 / 0.25),
+    0 16px 28px -14px rgb(0 0 0 / 0.65);
+}
+
+.skip-link {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: var(--z-palette);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-chip);
+  background: var(--color-cream);
+  color: var(--color-ink);
+  translate: 0 -200%;
+}
+
+.skip-link:focus-visible {
+  translate: 0;
+}

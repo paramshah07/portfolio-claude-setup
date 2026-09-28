@@ -1,0 +1,84 @@
+---
+import { getEntry } from 'astro:content';
+
+const { site, showdown } = (await getEntry('profile', 'main'))!.data;
+const external = { target: '_blank', rel: 'noopener' };
+const chips = [
+  site.email && { label: 'Email', href: `mailto:${site.email}`, color: 'cream', insert: 'brass', attrs: { 'data-copy': site.email } },
+  site.github && { label: 'GitHub', href: site.github, color: 'panel', attrs: external },
+  site.linkedin && { label: 'LinkedIn', href: site.linkedin, color: 'felt', attrs: external },
+  site.resumePath && { label: 'Résumé', href: site.resumePath, color: 'card-red', attrs: external },
+].filter((chip) => !!chip);
+---
+
+<section id="showdown" class="lamp-pool px-6 py-16 text-center md:px-12 md:py-24">
+  <h2 class="text-h2">Showdown</h2>
+  {showdown && <p class="mx-auto mt-6 max-w-[48ch] text-balance">{showdown}</p>}
+  {
+    chips.length > 0 && (
+      <ul class="mt-12 flex flex-wrap justify-center gap-6" role="list">
+        {chips.map((chip) => (
+          <li>
+            <a class="chip" href={chip.href} style={`--chip: var(--color-${chip.color}); --insert: var(--color-${chip.insert ?? 'cream'})`} {...chip.attrs}>
+              <span>{chip.label}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+  {site.email && <p class="copied mt-6 text-small" role="status" data-copied />}
+  <p class="mt-4 text-small text-cream/80">Press <kbd><span data-mod>⌘</span>K</kbd> for everything else</p>
+</section>
+
+<script>
+  // Copies the address instead of opening a mail app. Without JavaScript it stays a mailto link.
+  const chip = document.querySelector<HTMLAnchorElement>('#showdown [data-copy]');
+  const status = document.querySelector('#showdown [data-copied]');
+  chip?.addEventListener('click', (event) => {
+    event.preventDefault();
+    navigator.clipboard.writeText(chip.dataset.copy!).then(
+      () => (status!.textContent = 'Email copied'),
+      () => (location.href = chip.href),
+    );
+  });
+</script>
+
+<style>
+  /* Clay chips: eight edge inserts, a ring of the chip color and a cream inlay with the label. */
+  .chip {
+    display: grid;
+    place-items: center;
+    width: 8.5rem;
+    aspect-ratio: 1;
+    border-radius: var(--radius-chip);
+    background:
+      radial-gradient(circle, var(--color-cream) 0 52%, var(--color-brass) 52.5% 54%, transparent 54.5%),
+      radial-gradient(circle, transparent 0 74%, var(--chip) 74.5%, transparent 80%),
+      repeating-conic-gradient(from -8deg, var(--insert) 0 16deg, var(--chip) 16deg 45deg);
+    box-shadow: 0 14px 26px -12px rgb(0 0 0 / 0.75);
+    color: var(--color-ink);
+    font-size: 1.125rem;
+  }
+
+  .chip:hover span {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  @media (max-width: 767px) {
+    .chip {
+      width: 6.75rem;
+      font-size: 1rem;
+    }
+  }
+
+  kbd {
+    font-family: inherit;
+  }
+
+  /* Holds its line while empty, so the message appears without moving anything. */
+  .copied {
+    min-height: 1lh;
+  }
+</style>

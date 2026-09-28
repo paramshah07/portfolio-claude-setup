@@ -1,0 +1,228 @@
+---
+import { getEntry } from 'astro:content';
+import { PIPS, type Suit } from '../../lib/deck';
+
+const { experience, suits } = (await getEntry('profile', 'main'))!.data;
+const title = (suit: string) => suit[0].toUpperCase() + suit.slice(1);
+---
+
+<section id="hand-history" class="lamp-pool px-6 py-16 md:px-12 md:py-24">
+  <div class="mx-auto max-w-7xl">
+    <h2 class="text-h2">Hand History</h2>
+    <ol class="row mt-12" role="list">
+      {
+        experience.map((job, i) => {
+          // A card only flips when there is something on its back.
+          const hasBack = job.details.length > 0 || job.tags.length > 0;
+          const Face = hasBack ? 'button' : 'div';
+          const when = [job.start, job.end].filter(Boolean).join(' – ');
+          const meta = [job.location, when].filter(Boolean).join(' · ');
+          const flip = hasBack ? { type: 'button', 'aria-expanded': 'false', 'aria-controls': `job-${i}` } : {};
+          return (
+            <li class="slot">
+              <Face class:list={['face card-stock', { red: job.suit === 'hearts' || job.suit === 'diamonds' }]} {...flip}>
+                {job.suit && (
+                  <span class="pip" role="img" aria-label={title(job.suit)}>
+                    {PIPS[job.suit]}
+                  </span>
+                )}
+                {job.company && <span class="company">{job.company}</span>}
+                {job.role && <span>{job.role}</span>}
+                {meta && <span class="meta">{meta}</span>}
+                {job.result && <span class="result">{job.result}</span>}
+                {job.suit && (
+                  <span class="pip end" aria-hidden="true">
+                    {PIPS[job.suit]}
+                  </span>
+                )}
+              </Face>
+              {hasBack && (
+                <div id={`job-${i}`} class="back card-stock">
+                  {job.details.length > 0 && (
+                    <ul class="details">
+                      {job.details.map((detail) => (
+                        <li>{detail}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {job.tags.length > 0 && (
+                    <ul class="tags" role="list">
+                      {job.tags.map((tag) => (
+                        <li>{tag}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </li>
+          );
+        })
+      }
+    </ol>
+    {
+      suits && (
+        <ul class="legend" role="list">
+          {Object.entries(suits).map(([suit, meaning]) => (
+            <li>
+              <span aria-hidden="true">{PIPS[suit as Suit]}</span>
+              <span class="sr-only">{title(suit)}:</span> {meaning}
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </div>
+</section>
+
+<script>
+  // Flips a card to its back and back again. The animated flip comes with the motion pass.
+  for (const face of document.querySelectorAll('#hand-history button.face')) {
+    face.addEventListener('click', () => {
+      face.setAttribute('aria-expanded', String(face.getAttribute('aria-expanded') !== 'true'));
+    });
+  }
+</script>
+
+<style>
+  /* Phones scroll a row of cards. Tablets deal three by two, desktops one row of six. */
+  .row {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 1rem;
+  }
+
+  .slot {
+    display: grid;
+    flex: 0 0 15rem;
+    scroll-snap-align: center;
+  }
+
+  @media (min-width: 768px) {
+    .row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      overflow: visible;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .row {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+  }
+
+  .face,
+  .back {
+    grid-area: 1 / 1;
+    /* Grid items with aspect-ratio neither stretch nor shrink by default. Pin the width and
+       stretch the height, so the tallest back grows the whole row down, not out of its column. */
+    width: 100%;
+    min-width: 0;
+    align-self: stretch;
+    aspect-ratio: 63 / 88;
+    font-size: var(--text-small);
+    line-height: 1.45;
+    text-align: left;
+  }
+
+  .face {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 3rem 1rem;
+  }
+
+  .pip {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    font-size: 1.375rem;
+    line-height: 1;
+  }
+
+  .pip.end {
+    top: auto;
+    left: auto;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    rotate: 180deg;
+  }
+
+  .red .pip {
+    color: var(--color-card-red);
+  }
+
+  .company {
+    font-size: 1.125rem;
+    font-weight: 500;
+    line-height: 1.25;
+  }
+
+  .meta {
+    color: color-mix(in srgb, var(--color-ink) 70%, transparent);
+  }
+
+  .result {
+    margin-top: 0.5rem;
+  }
+
+  /* Positioned like the face, so DOM order puts the back on top when it shows. */
+  .back {
+    position: relative;
+    padding: 1.5rem 1rem;
+    outline: 1px solid color-mix(in srgb, var(--color-brass) 60%, transparent);
+    outline-offset: -0.5rem;
+  }
+
+  .details {
+    display: grid;
+    gap: 0.5rem;
+    padding-left: 1rem;
+    list-style: disc;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .tags li {
+    border: 1px solid color-mix(in srgb, var(--color-ink) 30%, transparent);
+    border-radius: var(--radius-chip);
+    padding: 0 0.5rem;
+  }
+
+  /* Without JavaScript the back sits open under the front, so every detail stays readable. */
+  :global(html:not(.js)) .slot {
+    align-content: start;
+  }
+
+  :global(html:not(.js)) .back {
+    grid-area: 2 / 1;
+    aspect-ratio: auto;
+    margin-top: 0.75rem;
+  }
+
+  :global(.js) .back {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  :global(.js) .face[aria-expanded='true'] + .back {
+    visibility: visible;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    margin-top: 2rem;
+    font-size: var(--text-small);
+    color: color-mix(in srgb, var(--color-cream) 80%, transparent);
+  }
+</style>
