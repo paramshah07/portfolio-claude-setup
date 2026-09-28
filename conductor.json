@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "setup": "if [ -f package.json ]; then npm install; fi",
+    "run": "npm run dev -- --port $CONDUCTOR_PORT"
+  }
+}
