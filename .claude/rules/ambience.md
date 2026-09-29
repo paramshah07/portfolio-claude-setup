@@ -21,7 +21,7 @@ A private card room in a members' lounge, late at night. Dark walnut walls, a ba
 - Feels like a 40mm lens at seated eye level, with shallow depth of field focused on the table.
 - The background is always soft. Nothing in the room competes with the cards.
 - Tone mapping: AgX. Grade: warm, slightly lifted shadows, creamy highlights. Blacks never drop below room #1B1009 and whites never pass cream #F3EEE2.
-- A vignette on every view. Fine film grain at about 4% opacity. No lens flare, no chromatic aberration, no light leaks.
+- A vignette on every view. Fine film grain at about 2% opacity; at 4% it speckles the cards and chip inlays. No lens flare, no chromatic aberration, no light leaks.
 
 ## Materials
 - Felt: matte woven baize with a soft sheen at grazing angles and faint printed brass lines.

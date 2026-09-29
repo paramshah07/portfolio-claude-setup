@@ -1,76 +1,84 @@
-import { useLoader, useThree } from '@react-three/fiber';
+import { useFrame, useLoader, useThree } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { street } from '../../../lib/state';
 import type { StageProps } from '../Stage';
 import atlasLayout from './atlas.json';
-import { SPOTS } from './layout';
+import { CARD, atlasCell, cardGeometry } from './card';
+import { SPOTS, dealShot } from './layout';
 
-const CARD = { w: 0.063, h: 0.088 };
-const DECK = 16;
-// Card indices bottom to top once the riffle interleaves the two halves.
-const RIFFLED = Array.from({ length: DECK / 2 }, (_, k) => [k, DECK / 2 + k]).flat();
-// A card's thickness, a little generous so stacked cards never fight over depth.
-const GAP = 0.0004;
+// A full deck. Only the cards content deals ever show a face; every other card has the back on
+// both sides, since any text in the scene must also be on the page.
+const DECK = 52;
+// A card's thickness and a whisker, so stacked cards never fight over depth.
+const GAP = CARD.t + 0.00002;
 const rest = (n: number) => 0.0006 + n * GAP;
-// Rotations about x: lying on the felt, and standing up in the fan leaning away from the player.
+// Rotations about x: lying on the felt, and stood up on the near end leaning away from the player.
 const FLAT = -Math.PI / 2;
 const STAND = -0.35;
 const SPIN = 0.12; // how the squared deck sits on the felt
-// Each card turns about a point near its bottom end, so the fan opens from there.
+// Each card turns about a point near its near end, so it stands up on that end.
 const PIVOT = CARD.h * 0.4;
-// How high the fan's pivot rides over the felt, so the lowest corner of the widest card clears it.
-const FAN = 0.03;
 const STREETS = ['preflop', 'flop', 'turn', 'river'] as const;
+// The spring: this many cards leave the top of the deck, and land in a ribbon spread whose last
+// slot is here, each card a step to the left of the one after it.
+const SPRUNG = 26;
+const SPREAD = { x: SPOTS.deck.x - 0.09, z: SPOTS.deck.z + 0.09, step: 0.0072 };
+// Gravity in m/s², slowed so an arc a few centimetres high reads on camera: real gravity lands a
+// card from the height of the deck in a tenth of a second.
+const G = 2.2;
+
+type Bend = { v: number };
 
 /**
- * The deck on the felt. Once the first frame is up it riffles, fans and deals the hole cards to
- * the player's seat, then deals each street of the board onto the middle of the table as The
- * Board section writes the street store, burning a card before each one.
+ * The deck on the felt. Once the first frame is up, the camera pushes in and half the deck springs
+ * off the top card by card, flexed, arcs over and lands face down in a ribbon spread, then zips back
+ * onto the deck. The top two slide to the player's seat and turn over as the camera settles on the
+ * hand, and each street of the board deals onto the middle of the table as The Board section writes
+ * the street store, burning a card before each one.
  */
 export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> & { ready: boolean }) {
   const atlas = useLoader(THREE.TextureLoader, '/cards/atlas.webp');
   const { gl } = useThree();
   const cards = useRef<THREE.Group[]>([]);
+  const meshes = useRef<THREE.Mesh[]>([]);
+  const bends = useRef<Bend[]>(Array.from({ length: DECK }, () => ({ v: 0 })));
   const timeline = useRef<gsap.core.Timeline>(null);
 
-  // The order the deck deals in from the top once the riffle is done: the hole cards, then a
-  // burn card before each street. Burn cards stay face down, so they show the back both ways.
+  // The order the deck deals in from the top: the hole cards, then a burn card before each street.
+  // Burn cards stay face down, so they're backs both ways.
   const streets = STREETS.slice(1).map((s) => board.filter((b) => b.street === s).map((b) => b.card));
   const dealing = [...hole, ...streets.flatMap((cards) => [null, ...cards])];
 
-  // One texture upload, one view per atlas cell and one material per face.
-  const { back, faces } = useMemo(() => {
+  // One texture upload, one material, and a geometry per face mapped to its cell of the atlas.
+  const { material, plain, faces } = useMemo(() => {
     atlas.colorSpace = THREE.SRGBColorSpace;
     atlas.anisotropy = gl.capabilities.getMaxAnisotropy();
-    const { cell, cols, cards: codes } = atlasLayout;
-    const { width: W, height: H } = atlas.image as HTMLImageElement;
-    const material = (i: number) => {
-      const t = atlas.clone();
-      t.repeat.set(cell.w / W, cell.h / H);
-      t.offset.set(((i % cols) * (cell.w + cell.gutter)) / W, 1 - (Math.floor(i / cols) * (cell.h + cell.gutter) + cell.h) / H);
-      return new THREE.MeshPhysicalMaterial({ map: t, alphaTest: 0.5, roughness: 0.45, clearcoat: 0.3 });
+    const count = atlasLayout.cards.length + 1;
+    const back = atlasCell(atlasLayout, count, count - 1);
+    return {
+      // Satin stock: a clearcoat mirrors the lamps across the whole back and costs a lobe on every
+      // card pixel, so the sheen comes from the base layer alone.
+      material: new THREE.MeshStandardMaterial({ map: atlas, roughness: 0.42 }),
+      plain: cardGeometry(back, back),
+      faces: new Map(atlasLayout.cards.map((code, i) => [code, cardGeometry(back, atlasCell(atlasLayout, count, i))])),
     };
-    return { back: material(codes.length), faces: new Map(codes.map((code, i) => [code, material(i)])) };
   }, [atlas, gl]);
-  const plane = useMemo(() => new THREE.PlaneGeometry(CARD.w, CARD.h), []);
-  useEffect(
-    () => () => [back, ...faces.values()].forEach((m) => (m.map?.dispose(), m.dispose())),
-    [back, faces],
-  );
-  useEffect(() => () => plane.dispose(), [plane]);
+  useEffect(() => () => [material, plain, ...faces.values()].forEach((o) => o.dispose()), [material, plain, faces]);
 
-  // Squared up face down on the felt, then the hole cards and each street as the store reaches
-  // it, all on one timeline so a street that arrives early waits for the deal before it. The
-  // content can't change after load, so this runs once.
+  useFrame(() => meshes.current.forEach((mesh, i) => (mesh.morphTargetInfluences![0] = bends.current[i].v)));
+
+  // Squared up face down on the felt, then the spring, the hole cards and each street as the store
+  // reaches it, all on one timeline so a street that arrives early waits for the deal before it.
+  // The content can't change after load, so this runs once.
   useLayoutEffect(() => {
     cards.current.forEach((card, i) => {
       card.position.set(SPOTS.deck.x, rest(i), SPOTS.deck.z);
       card.rotation.set(FLAT, 0, SPIN);
     });
     const tl = (timeline.current = gsap.timeline({ paused: true, defaults: { ease: 'power3.out' } }));
-    const top = deal(tl, cards.current, hole.length);
+    const top = deal(tl, cards.current, bends.current, hole.length);
     let dealt = 0;
     let next = hole.length;
     let placed = 0;
@@ -86,6 +94,7 @@ export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> 
     return () => {
       unsubscribe();
       tl.kill();
+      dealShot.close = dealShot.hand = 0;
     };
   }, []);
 
@@ -98,13 +107,22 @@ export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> 
   return (
     <>
       {Array.from({ length: DECK }, (_, i) => {
-        const code = dealing[DECK - 1 - RIFFLED.indexOf(i)];
+        const code = dealing[DECK - 1 - i];
         return (
           <group key={i} ref={(g) => void (g && (cards.current[i] = g))}>
-            <group position-y={PIVOT}>
-              <mesh geometry={plane} material={back} castShadow receiveShadow />
-              <mesh geometry={plane} material={(code && faces.get(code)) || back} rotation-y={Math.PI} castShadow receiveShadow />
-            </group>
+            <mesh
+              ref={(m) => {
+                if (!m) return;
+                meshes.current[i] = m;
+                // r3f sets the geometry after the mesh is made, so its morph targets need counting.
+                m.updateMorphTargets();
+              }}
+              position-y={PIVOT}
+              geometry={(code && faces.get(code)) || plain}
+              material={material}
+              castShadow
+              receiveShadow
+            />
           </group>
         );
       })}
@@ -132,48 +150,66 @@ function flip(tl: gsap.core.Timeline, card: THREE.Group, y: number, at: number) 
   tl.to(card.rotation, { y: Math.PI, duration: 0.7, ease: 'expo.out', onUpdate: lift }, at);
 }
 
-// Riffle, square up, stand the cards up in a fan, slide the top ones to the player's seat and
-// turn them over, then square the rest back into a deck. Returns the deck from the top down.
-function deal(tl: gsap.core.Timeline, cards: THREE.Group[], dealt: number) {
-  const half = cards.length / 2;
+// Fly a card from height y to `to` under gravity, rising `lift` first: level speed across and a
+// parabola up and down. Returns when it lands.
+function hop(tl: gsap.core.Timeline, card: THREE.Group, to: { x: number; y: number; z: number }, y: number, lift: number, at: number) {
+  const up = Math.sqrt((2 * lift) / G);
+  const down = Math.sqrt((2 * (y + lift - to.y)) / G);
+  tl.to(card.position, { x: to.x, z: to.z, duration: up + down, ease: 'none' }, at);
+  tl.to(card.position, { y: y + lift, duration: up, ease: 'power1.out' }, at);
+  tl.to(card.position, { y: to.y, duration: down, ease: 'power1.in' }, at + up);
+  return at + up + down;
+}
+
+// The spring, then the hole cards: the top SPRUNG cards leave the deck one after another. Each
+// stands up on its near end flexed, springs over in an arc, straightening and falling flat as it
+// comes down, and lands face down in the spread, each on top of the one before and a step nearer
+// the deck, then slides a few millimetres. The spread zips back onto the deck nearest card first,
+// which puts every card back where it was. Then the top cards slide to the player's seat, side by
+// side, and turn over as they land. Returns the deck from the top down.
+function deal(tl: gsap.core.Timeline, cards: THREE.Group[], bends: Bend[], dealt: number) {
   const { x, z } = SPOTS.deck;
+  const top = [...cards].reverse();
+  // The camera pushes in on the deck first, and the spring starts as it arrives.
+  tl.to(dealShot, { close: 1, duration: 1.1, ease: 'power2.inOut' }, 0);
 
-  // Split the deck into two halves that slide apart and lift their inner edges.
-  cards.forEach((card, i) => {
-    const left = i < half;
-    tl.to(card.position, { x: x + (left ? -0.05 : 0.05), y: rest(i % half) + 0.016, duration: 0.5, ease: 'power2.inOut' }, 0);
-    tl.to(card.rotation, { y: left ? -0.3 : 0.3, z: left ? 0.3 : -0.06, duration: 0.5, ease: 'power2.inOut' }, 0);
+  top.slice(0, SPRUNG).forEach((card, d) => {
+    const bend = bends[cards.length - 1 - d];
+    const y = rest(cards.length - 1 - d) + 0.012;
+    const at = 0.8 + d * 0.048;
+    // Turned a little toward the camera, so the flex shows in the card's outline.
+    tl.to(card.position, { x: x - 0.012, y, duration: 0.24, ease: 'power2.out' }, at);
+    tl.to(card.rotation, { x: STAND, y: 0.45, z: SPIN + 0.3, duration: 0.24, ease: 'power2.out' }, at);
+    tl.to(bend, { v: 0.9, duration: 0.24, ease: 'power2.out' }, at);
+
+    // Overlapping cards rest on the ones under them, so they tilt a little and sit a little higher.
+    const under = Math.min(d, 8);
+    const slot = pivot(SPREAD.x - (SPRUNG - 1 - d) * SPREAD.step, SPREAD.z, 0, false);
+    const lands = hop(tl, card, { ...slot, y: rest(0) + (under * GAP) / 2 + d * 0.00001 }, y, 0.07 + (d % 3) * 0.01, at + 0.24);
+    const flight = lands - at - 0.24;
+    tl.to(card.rotation, { x: FLAT, y: (-under * GAP) / CARD.w, z: 0.02 * Math.sin(d * 7.3), duration: flight, ease: 'power2.in' }, at + 0.24);
+    // It holds the flex over the top of the arc and straightens as it comes down.
+    tl.to(bend, { v: 0, duration: flight, ease: 'sine.in' }, at + 0.24);
+    tl.to(card.position, { x: slot.x - 0.003, duration: 0.2 }, lands);
   });
 
-  // Interleave them bottom up, one from each side in turn.
-  const order = RIFFLED.map((i) => cards[i]);
-  order.forEach((card, n) => {
-    tl.to(card.position, { x, y: rest(n), duration: 0.35 }, 0.6 + n * 0.035);
-    tl.to(card.rotation, { y: 0, z: SPIN, duration: 0.35 }, 0.6 + n * 0.035);
+  tl.addLabel('gather', '+=0.35');
+  top.slice(0, SPRUNG).forEach((card, d) => {
+    const at = tl.labels.gather + (SPRUNG - 1 - d) * 0.016;
+    tl.to(card.position, { x, y: rest(cards.length - 1 - d), z, duration: 0.42, ease: 'power2.inOut' }, at);
+    tl.to(card.rotation, { x: FLAT, y: 0, z: SPIN, duration: 0.42, ease: 'power2.inOut' }, at);
   });
 
-  // Stand them up and fan them from the bottom end, backs to the player, the top card nearest
-  // and furthest right.
-  tl.addLabel('fan', '+=0.15');
-  order.forEach((card, n) => {
-    tl.to(card.position, { y: FAN, z: z + n * GAP, duration: 0.8 }, 'fan');
-    tl.to(card.rotation, { x: STAND, z: 0.7 - (n / (order.length - 1)) * 1.1, duration: 0.8 }, 'fan');
-  });
-
-  // Slide the top cards to the player's seat, side by side, and turn each one over as it lands.
-  tl.addLabel('deal', 'fan+=0.9');
-  const top = [...order].reverse();
+  // Out to the medium shot of the hand as the hole cards slide to the seat. The hand shot sits under
+  // the close one, so letting go of close moves the camera straight from one to the other.
+  tl.addLabel('deal', '+=0.3');
+  tl.set(dealShot, { hand: 1 }, 'deal');
+  tl.to(dealShot, { close: 0, duration: 1.6, ease: 'power2.inOut' }, 'deal');
   top.slice(0, dealt).forEach((card, n) => {
     const spin = n ? -0.05 : 0.07;
     const at = tl.labels.deal + n * 0.3;
     slide(tl, card, pivot(SPOTS.seat.x + (n - (dealt - 1) / 2) * 0.07, SPOTS.seat.z, spin, true), rest(n), spin, at);
     flip(tl, card, rest(n), at + 0.75);
-  });
-
-  // Lay the rest back down as a deck.
-  order.slice(0, -dealt).forEach((card, n) => {
-    tl.to(card.position, { y: rest(n), z, duration: 0.6, ease: 'power2.inOut' }, 'deal+=0.8');
-    tl.to(card.rotation, { x: FLAT, z: SPIN, duration: 0.6, ease: 'power2.inOut' }, 'deal+=0.8');
   });
   return top;
 }

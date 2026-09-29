@@ -1,6 +1,6 @@
 import { AccumulativeShadows, ContactShadows, Environment, Lightformer, RandomizedLight, useEnvironment } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
-import { memo, useLayoutEffect, useRef, useState } from 'react';
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { Tier } from '../../../lib/state';
 import { TABLE_AT } from '../objects/layout';
@@ -13,7 +13,7 @@ const KEY_COLOR = '#FFF8F0';
 // and pools on the felt from the board to the player's seat before falling off toward the rail.
 const KEY = new THREE.Vector3(0.1, 1.3, -0.25);
 const POOL = new THREE.Vector3(0, 0, 0.1);
-const KEY_CANDELA = 3.5;
+const KEY_CANDELA = 2.4;
 // Reflections only: low enough that the room's bulbs don't light the table themselves.
 const REFLECTIONS = 0.06;
 // The felt the baked and contact shadows fall on: the straight middle of the stadium and as much of
@@ -25,6 +25,11 @@ const PENDANTS: [number, number, number][] = [
   [0, 2.3, -1.2],
   [0.5, 2, -1.4],
 ];
+
+// The light through the blinds in reference/hero-16x9.jpg: low and warm from behind the player's
+// left shoulder, so its slats fall across the felt in soft bands and it lights the sides of the
+// chips and cards that face the camera. No falloff, like light from outside the room.
+const BLINDS = { at: new THREE.Vector3(-0.55, 0.85, 1.7), aim: new THREE.Vector3(0.15, 0, -0.25), color: '#FFE4C0', intensity: 5 };
 
 const HDRI = '/hdri/warm_restaurant_night_512.hdr';
 useEnvironment.preload({ files: HDRI });
@@ -39,8 +44,12 @@ export const flicker = (t: number) => 1 + 0.012 * Math.sin(t * 0.9) + 0.008 * Ma
  */
 export function Lights({ tier, onBaked }: { tier: Exclude<Tier, 'static'>; onBaked: () => void }) {
   const key = useRef<THREE.SpotLight>(null);
+  const blinds = useRef<THREE.SpotLight>(null);
   const { scene } = useThree();
   const [target] = useState(() => new THREE.Object3D());
+  const [aim] = useState(() => new THREE.Object3D());
+  const slats = useMemo(slatCookie, []);
+  useEffect(() => () => slats.dispose(), [slats]);
   // Both kinds of shadow wait a frame, until drei's Instances have counted the chips and cups. A
   // render before that caches empty bounding spheres for them, and they'd be culled for good.
   const [bake, setBake] = useState(false);
@@ -58,6 +67,7 @@ export function Lights({ tier, onBaked }: { tier: Exclude<Tier, 'static'>; onBak
   // leaves autoClear off between its frames, which would smear the contact shadows into trails.
   useFrame(({ gl }) => {
     key.current!.shadow.needsUpdate = true;
+    if (blinds.current) blinds.current.shadow.needsUpdate = true;
     gl.autoClear = true;
   }, -1);
 
@@ -85,6 +95,31 @@ export function Lights({ tier, onBaked }: { tier: Exclude<Tier, 'static'>; onBak
           shadow-camera-near={0.5}
           shadow-camera-far={3}
         />
+        {/* A spot light's map only projects while it casts shadows, so the low tier goes without. */}
+        {tier !== 'low' && (
+          <>
+            <primitive object={aim} position={BLINDS.aim} />
+            <spotLight
+              ref={blinds}
+              position={BLINDS.at}
+              target={aim}
+              color={BLINDS.color}
+              intensity={BLINDS.intensity}
+              angle={0.42}
+              penumbra={0.35}
+              decay={0}
+              map={slats}
+              castShadow
+              shadow-autoUpdate={false}
+              shadow-mapSize={[size, size]}
+              shadow-radius={tier === 'high' ? 6 : 2}
+              shadow-bias={-0.0004}
+              shadow-normalBias={0.004}
+              shadow-camera-near={0.5}
+              shadow-camera-far={4}
+            />
+          </>
+        )}
         {bake && tier !== 'low' && (
           <ContactShadows position-y={0.0004} scale={1} width={FELT.width} height={FELT.depth} far={0.08} blur={1.5} opacity={0.55} color="#1B1009" />
         )}
@@ -92,6 +127,25 @@ export function Lights({ tier, onBaked }: { tier: Exclude<Tier, 'static'>; onBak
       {bake && <Baked />}
     </>
   );
+}
+
+// The blinds as the light sees them: soft-edged slats with gaps that let a little through.
+function slatCookie() {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 256;
+  const g = canvas.getContext('2d')!;
+  const bands = g.createLinearGradient(0, 0, 0, 256);
+  const SLATS = 11;
+  for (let k = 0; k < SLATS; k++) {
+    const y = k / SLATS;
+    bands.addColorStop(y, '#161616');
+    bands.addColorStop(y + 0.22 / SLATS, '#ffffff');
+    bands.addColorStop(y + 0.58 / SLATS, '#ffffff');
+    bands.addColorStop(y + 0.8 / SLATS, '#161616');
+  }
+  g.fillStyle = bands;
+  g.fillRect(0, 0, 256, 256);
+  return new THREE.CanvasTexture(canvas);
 }
 
 // Memoised, because drei's Environment bakes again on every render.

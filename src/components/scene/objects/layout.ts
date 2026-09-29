@@ -17,8 +17,6 @@ export const TABLE = {
   /** How far the padded rail reaches in over the felt. */
   rail: 0.12,
 };
-// Ten seats, the player's in the middle of the near side and the dealer's opposite it.
-export const SEATS = 10;
 
 export const SPOTS = {
   /** Where the hole cards land, in front of the player and behind the betting line. */
@@ -32,3 +30,10 @@ export const SPOTS = {
   /** The first of the team stacks, which run toward +x to the player's right. */
   stacks: new THREE.Vector3(0.17, 0, 0.32),
 };
+
+/**
+ * The deal's camera, which the deck's timeline moves and the rig's camera follows: how far it has
+ * pushed in on the deck for the spring (close), and how far it has settled on the dealt hand
+ * afterwards (hand), each from 0 at the section's pose to 1.
+ */
+export const dealShot = { close: 0, hand: 0 };
