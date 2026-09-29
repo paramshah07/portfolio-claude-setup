@@ -6,7 +6,7 @@ import { street } from '../../../lib/state';
 import type { StageProps } from '../Stage';
 import atlasLayout from './atlas.json';
 import { CARD, atlasCell, cardGeometry } from './card';
-import { SPOTS } from './layout';
+import { SPOTS, dealShot } from './layout';
 
 // A full deck. Only the cards content deals ever show a face; every other card has the back on
 // both sides, since any text in the scene must also be on the page.
@@ -32,13 +32,14 @@ const G = 2.2;
 type Bend = { v: number };
 
 /**
- * The deck on the felt. Once the first frame is up, half of it springs off the top card by card,
- * flexed, arcs over and lands face down in a ribbon spread, then zips back onto the deck. The top
- * two slide to the player's seat and turn over, and each street of the board deals onto the middle
- * of the table as The Board section writes the street store, burning a card before each one.
+ * The deck on the felt. Once the first frame is up, the camera pushes in and half the deck springs
+ * off the top card by card, flexed, arcs over and lands face down in a ribbon spread, then zips back
+ * onto the deck. The top two slide to the player's seat and turn over as the camera settles on the
+ * hand, and each street of the board deals onto the middle of the table as The Board section writes
+ * the street store, burning a card before each one.
  */
 export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> & { ready: boolean }) {
-  const [atlas, paper] = useLoader(THREE.TextureLoader, ['/cards/atlas.webp', '/textures/paper-normal.webp']);
+  const atlas = useLoader(THREE.TextureLoader, '/cards/atlas.webp');
   const { gl } = useThree();
   const cards = useRef<THREE.Group[]>([]);
   const meshes = useRef<THREE.Mesh[]>([]);
@@ -54,25 +55,16 @@ export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> 
   const { material, plain, faces } = useMemo(() => {
     atlas.colorSpace = THREE.SRGBColorSpace;
     atlas.anisotropy = gl.capabilities.getMaxAnisotropy();
-    // Paper001 from ambientCG (CC0, https://ambientcg.com/a/Paper001), tiled in metres on uv1.
-    paper.wrapS = paper.wrapT = THREE.RepeatWrapping;
-    paper.channel = 1;
     const count = atlasLayout.cards.length + 1;
     const back = atlasCell(atlasLayout, count, count - 1);
     return {
-      material: new THREE.MeshPhysicalMaterial({
-        map: atlas,
-        normalMap: paper,
-        normalScale: new THREE.Vector2(0.3, 0.3),
-        roughness: 0.5,
-        // Satin, not gloss: a stronger coat mirrors the lamps across the whole back.
-        clearcoat: 0.15,
-        clearcoatRoughness: 0.5,
-      }),
+      // Satin stock: a clearcoat mirrors the lamps across the whole back and costs a lobe on every
+      // card pixel, so the sheen comes from the base layer alone.
+      material: new THREE.MeshStandardMaterial({ map: atlas, roughness: 0.42 }),
       plain: cardGeometry(back, back),
       faces: new Map(atlasLayout.cards.map((code, i) => [code, cardGeometry(back, atlasCell(atlasLayout, count, i))])),
     };
-  }, [atlas, paper, gl]);
+  }, [atlas, gl]);
   useEffect(() => () => [material, plain, ...faces.values()].forEach((o) => o.dispose()), [material, plain, faces]);
 
   useFrame(() => meshes.current.forEach((mesh, i) => (mesh.morphTargetInfluences![0] = bends.current[i].v)));
@@ -102,6 +94,7 @@ export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> 
     return () => {
       unsubscribe();
       tl.kill();
+      dealShot.close = dealShot.hand = 0;
     };
   }, []);
 
@@ -177,11 +170,13 @@ function hop(tl: gsap.core.Timeline, card: THREE.Group, to: { x: number; y: numb
 function deal(tl: gsap.core.Timeline, cards: THREE.Group[], bends: Bend[], dealt: number) {
   const { x, z } = SPOTS.deck;
   const top = [...cards].reverse();
+  // The camera pushes in on the deck first, and the spring starts as it arrives.
+  tl.to(dealShot, { close: 1, duration: 1.1, ease: 'power2.inOut' }, 0);
 
   top.slice(0, SPRUNG).forEach((card, d) => {
     const bend = bends[cards.length - 1 - d];
     const y = rest(cards.length - 1 - d) + 0.012;
-    const at = 0.15 + d * 0.048;
+    const at = 0.8 + d * 0.048;
     // Turned a little toward the camera, so the flex shows in the card's outline.
     tl.to(card.position, { x: x - 0.012, y, duration: 0.24, ease: 'power2.out' }, at);
     tl.to(card.rotation, { x: STAND, y: 0.45, z: SPIN + 0.3, duration: 0.24, ease: 'power2.out' }, at);
@@ -205,7 +200,11 @@ function deal(tl: gsap.core.Timeline, cards: THREE.Group[], bends: Bend[], dealt
     tl.to(card.rotation, { x: FLAT, y: 0, z: SPIN, duration: 0.42, ease: 'power2.inOut' }, at);
   });
 
+  // Out to the medium shot of the hand as the hole cards slide to the seat. The hand shot sits under
+  // the close one, so letting go of close moves the camera straight from one to the other.
   tl.addLabel('deal', '+=0.3');
+  tl.set(dealShot, { hand: 1 }, 'deal');
+  tl.to(dealShot, { close: 0, duration: 1.6, ease: 'power2.inOut' }, 'deal');
   top.slice(0, dealt).forEach((card, n) => {
     const spin = n ? -0.05 : 0.07;
     const at = tl.labels.deal + n * 0.3;

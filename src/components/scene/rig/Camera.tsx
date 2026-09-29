@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { SECTIONS, scrollProgress } from '../../../lib/state';
-import { TABLE_AT } from '../objects/layout';
+import { TABLE_AT, dealShot } from '../objects/layout';
 
 export const FOV = 45;
 /** The hero plate's frame (2602 x 1456), which the room plane fills at the rest pose. */
@@ -38,6 +38,14 @@ const flat = ({ at, look }: Pose) => {
   const [lx, ly, lz] = new THREE.Vector3(...look).add(TABLE_AT).toArray();
   return { x, y, z, lx, ly, lz };
 };
+
+// The deal's two shots. Close: low over the near rail, looking a little left of the deck so the
+// spring and the spread it lands in fill the right half of the frame, clear of the hero's copy.
+// Hand: a medium shot the camera settles on once the hole cards are down, near enough to read them
+// with the lamps still in frame.
+const shot = ({ at, look }: Pose) => ({ at: new THREE.Vector3(...at).add(TABLE_AT), look: new THREE.Vector3(...look).add(TABLE_AT) });
+const CLOSE = shot({ at: [-0.04, 0.13, 0.52], look: [0.02, 0.05, 0.05] });
+const HAND = shot({ at: [0.03, 0.2, 0.8], look: [0.06, 0.1, 0.05] });
 
 /** Where the camera is looking, for the depth of field to focus on. */
 export const focus = new THREE.Vector3();
@@ -111,8 +119,12 @@ export function Camera() {
 
     const { tl, pose } = path.current;
     tl.seek(s.progress);
-    focus.set(pose.lx, pose.ly, pose.lz);
-    offset.set(pose.x, pose.y, pose.z).sub(focus);
+    // Toward the deal's shots as the deck calls for them, handing back to the scroll path over the
+    // first 15% of the page.
+    const fade = THREE.MathUtils.clamp(1 - s.progress / 0.15, 0, 1);
+    const [hand, close] = [dealShot.hand * fade, dealShot.close * fade];
+    focus.set(pose.lx, pose.ly, pose.lz).lerp(HAND.look, hand).lerp(CLOSE.look, close);
+    offset.set(pose.x, pose.y, pose.z).lerp(HAND.at, hand).lerp(CLOSE.at, close).sub(focus);
     offset.applyAxisAngle(THREE.Object3D.DEFAULT_UP, s.yaw);
     right.crossVectors(offset, THREE.Object3D.DEFAULT_UP).normalize();
     offset.applyAxisAngle(right, s.pitch);

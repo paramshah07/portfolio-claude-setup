@@ -55,7 +55,6 @@ const svg = (body) =>
 let seed = 7;
 const random = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
 const grain = Float32Array.from({ length: W * H }, () => random() - 0.5);
-// Grain smoothed over a few pixels, the scale of pressed clay.
 const blur = (src, radius) => {
   const out = new Float32Array(src.length);
   const tmp = new Float32Array(src.length);
@@ -73,7 +72,8 @@ const blur = (src, radius) => {
     }
   return out;
 };
-const mottle = blur(grain, 3).map((v) => v * 6);
+// A faint, broad variation in the clay's sheen. Anything finer or in the colour reads as grain.
+const mottle = blur(grain, 8).map((v) => v * 10);
 const raw = async (body) => (await sharp(svg(body)).greyscale().raw().toBuffer({ resolveWithObject: true })).data;
 
 // Masks, white where each part is: the spots, the inlay and its brass rings.
@@ -90,13 +90,7 @@ for (const [name, [body, spotColour]] of Object.entries(CLAYS)) {
       ${circle(11.2, 'stroke-width="9"')}${circle(10.5, 'stroke-width="2.5"')}
       <g stroke-width="1.6" opacity="0.35">${rosette}</g>
     </g>`);
-  const { data, info } = await sharp(base).raw().toBuffer({ resolveWithObject: true });
-  // Clay mottles a little; the printed inlay doesn't.
-  for (let i = 0; i < W * H; i++) {
-    const k = inlayMask[i] > 127 ? 0.25 : 1;
-    for (let c = 0; c < 3; c++) data[i * info.channels + c] = Math.max(0, Math.min(255, data[i * info.channels + c] * (1 + mottle[i] * 0.05 * k)));
-  }
-  await sharp(data, { raw: info }).removeAlpha().webp({ quality: 90 }).toFile(`public/textures/chip-${name}.webp`);
+  await sharp(base).removeAlpha().webp({ quality: 90 }).toFile(`public/textures/chip-${name}.webp`);
 }
 
 // Height, then normals from its slope. The band is cross-hatched between two raised rings, the
@@ -112,7 +106,7 @@ const height = await raw(`
   <g fill="none" stroke="#a0a0a0">${circle(18.6, 'stroke-width="10"')}${circle(12.9, 'stroke-width="8"')}</g>
   <g fill="none" stroke="#404040" stroke-width="2">${spots}</g>
   ${circle(12, 'fill="#606060"')}`);
-const h = blur(Float32Array.from(height, (v, i) => v / 255 + grain[i] * 0.02), 1);
+const h = blur(Float32Array.from(height, (v) => v / 255), 1);
 const STRENGTH = 3;
 const normal = Buffer.alloc(W * H * 3);
 for (let y = 0; y < H; y++)
@@ -132,7 +126,7 @@ await sharp(normal, { raw: { width: W, height: H, channels: 3 } }).webp({ qualit
 const orm = Buffer.alloc(W * H * 3);
 for (let i = 0; i < W * H; i++) {
   const edge = i >= FACE * W;
-  const rough = brassMask[i] > 127 ? 0.35 : inlayMask[i] > 127 ? 0.45 : (edge ? 0.6 : 0.68) + mottle[i] * 0.04;
+  const rough = brassMask[i] > 127 ? 0.35 : inlayMask[i] > 127 ? 0.45 : (edge ? 0.6 : 0.68) + mottle[i] * 0.02;
   [orm[i * 3], orm[i * 3 + 1], orm[i * 3 + 2]] = [255, Math.round(rough * 255), brassMask[i] > 127 ? 255 : 0];
 }
 await sharp(orm, { raw: { width: W, height: H, channels: 3 } }).webp({ quality: 92 }).toFile('public/textures/chip-orm.webp');

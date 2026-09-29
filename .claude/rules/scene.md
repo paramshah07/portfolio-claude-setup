@@ -30,7 +30,7 @@ One persistent React Three Fiber canvas (the Stage island) fixed behind the page
 ## Cards
 - Poker size, 0.063 x 0.088 in world units, 0.3 mm thick with 3.2 mm rounded corners, all real geometry from objects/card.ts. Rows run the length of the card, so a morph target bends it along its long axis.
 - scripts/make-card-faces.mjs sets the faces from Adrian Kennard's CC0 deck in scripts/cards/kennard (courts traced from Goodall & Son, recoloured to the tokens), with EB Garamond indices from scripts/cards/ranks.json, and packs them with public/cards/back.png into one atlas.
-- Material: MeshPhysicalMaterial on cream card stock, roughness 0.5 with a light satin clearcoat and the CC0 paper normal map in public/textures.
+- Material: MeshStandardMaterial on cream card stock, roughness 0.42 for the satin sheen. No clearcoat and no paper normal map: at the table's distances both read as glare and grain.
 - A full deck of 52. Only the cards content deals have faces; every other card is a back on both sides, so no card label shows that isn't on the page.
 - The deal: half the deck springs off the top card by card, flexed, arcs over under gravity and lands face down in a ribbon spread, then zips back onto the deck. The hole cards slide to the player's seat and turn over. The board cards on the table deal in sync with The Board section, a burn card before each street.
 
@@ -53,8 +53,13 @@ One persistent React Three Fiber canvas (the Stage island) fixed behind the page
 - Phase 3: a few hundred dust particles drifting slowly through the lamp light, high tier only.
 
 ## Lens and post
-- @react-three/postprocessing: DepthOfField at half resolution focused on the table surface (at a quarter its edges step in blocks), Bloom with a high threshold so only lamps and brass highlights glow, Vignette, Noise at about 4% and a LUT for the warm grade, with AgX tone mapping.
+- @react-three/postprocessing: DepthOfField at half resolution focused on the table surface (at a quarter its edges step in blocks), with a focus range of 1.1 m so the whole table is sharp and the room soft, Bloom with a high threshold so only lamps and brass highlights glow, and a LUT for the warm grade, with AgX tone mapping. The vignette and 2% grain are a CSS overlay (rig/Lens.astro) that every tier shares.
 - Camera: about a 40mm equivalent, a field of view around 45 degrees.
+
+## The deal's shots
+The deck's timeline moves two weights in layout.ts (dealShot) that the camera blends toward, handing back to the scroll path over the first 15% of the page:
+- Close: as the deal starts, the camera pushes in low over the near rail so the spring and the spread fill the right half of the frame, clear of the hero's copy, as in the concept video.
+- Hand: as the hole cards slide to the seat, it moves straight from the close shot to a medium shot of the hand, near enough to read the cards with the lamps still in frame.
 
 ## Camera path (phase 2)
 One camera pose per section, matched to the reference frames and interpolated with a ScrollTrigger scrub (power2.inOut):

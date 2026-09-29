@@ -4,8 +4,6 @@ import * as THREE from 'three';
 export const CARD = { w: 0.063, h: 0.088, t: 0.0003, r: 0.0032 };
 /** The radius the bend morph target curls the long axis round: the ends lift about 36 degrees. */
 export const BEND = 0.07;
-// The paper normal map tiles once every 4 cm.
-const PAPER = 0.04;
 
 /** An atlas cell in texture space, v up. */
 export type Cell = { u0: number; v0: number; u1: number; v1: number };
@@ -15,7 +13,7 @@ export type Cell = { u0: number; v0: number; u1: number; v1: number };
  * face -z, each mapped to its atlas cell and reading upright from its own side. Rows run across the
  * card from end to end, narrowing round the corners, so there are vertices all along the long axis
  * for the morph target, which curls the card round a cylinder of radius BEND at influence 1 (and
- * the other way at -1). The edge takes the back's border colour. uv1 tiles the paper in metres.
+ * the other way at -1). The edge takes the back's border colour.
  */
 export function cardGeometry(back: Cell, face: Cell, { across = 6, along = 14, arc = 6 } = {}) {
   const { w, h, t, r } = CARD;
@@ -89,7 +87,6 @@ export function cardGeometry(back: Cell, face: Cell, { across = 6, along = 14, a
   g.setAttribute('position', new THREE.Float32BufferAttribute(position, 3));
   g.setAttribute('normal', new THREE.Float32BufferAttribute(normal, 3));
   g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
-  g.setAttribute('uv1', new THREE.Float32BufferAttribute(position.flatMap((v, i) => (i % 3 === 2 ? [] : [v / PAPER])), 2));
   g.setIndex(index);
 
   // The bend as offsets: each point swings round the axis at z = BEND by y / BEND radians, keeping
