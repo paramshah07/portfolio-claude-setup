@@ -27,12 +27,11 @@ One persistent React Three Fiber canvas (the Stage island) fixed behind the page
 - Rail: a padded profile swept around the oval in dark leather (rail #3A3329, roughness 0.5). Brass cup holders at each seat. A walnut edge under the rail.
 
 ## Cards
-- Poker size, 0.063 x 0.088 in world units, very thin, with rounded corners from an alpha map.
-- scripts/make-card-faces.mjs generates the faces as SVG and rasterizes them into a texture atlas. Backs use public/cards/back.png.
-- Material: MeshPhysicalMaterial on cream card stock, roughness 0.45 and clearcoat 0.3 for the satin sheen.
-- Phase 1: the deal is a GSAP timeline on rigid cards in mid-air: riffle, fan, then deal two toward the camera.
-- Phase 2: dealt cards slide across the felt and settle with contact shadows. The board cards on the table deal in sync with The Board section.
-- Phase 3: three-custom-shader-material bends cards along their long axis during the riffle and while they're dealt.
+- Poker size, 0.063 x 0.088 in world units, 0.3 mm thick with 3.2 mm rounded corners, all real geometry from objects/card.ts. Rows run the length of the card, so a morph target bends it along its long axis.
+- scripts/make-card-faces.mjs sets the faces from Adrian Kennard's CC0 deck in scripts/cards/kennard (courts traced from Goodall & Son, recoloured to the tokens), with EB Garamond indices from scripts/cards/ranks.json, and packs them with public/cards/back.png into one atlas.
+- Material: MeshPhysicalMaterial on cream card stock, roughness 0.5 with a light satin clearcoat and the CC0 paper normal map in public/textures.
+- A full deck of 52. Only the cards content deals have faces; every other card is a back on both sides, so no card label shows that isn't on the page.
+- The deal: half the deck springs off the top card by card, flexed, arcs over under gravity and lands face down in a ribbon spread, then zips back onto the deck. The hole cards slide to the player's seat and turn over. The board cards on the table deal in sync with The Board section, a burn card before each street.
 
 ## Chips (phase 2)
 - 39 mm across and 3.3 mm thick, in instanced stacks through drei Instances.
