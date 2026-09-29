@@ -21,10 +21,11 @@ One persistent React Three Fiber canvas (the Stage island) fixed behind the page
 - Phase 3: on the high tier, replace the plate with the Marble world (public/splats/room-500k.spz, or room-100k.spz on medium) rendered with Spark and converted to metric scale with the world's semantics metadata. The plate stays as the fallback.
 
 ## Table (phase 2)
-- An oval tabletop from an extruded stadium shape, about 2.4 x 1.2 m in world units.
-- Felt: MeshPhysicalMaterial in felt #2E4C3A, roughness 0.9, sheen 1 with a slightly lighter sheen color and a sheen roughness of 0.8, plus a normal map from a CC0 fabric texture in public/textures.
+- scripts/make-table.py models the table in Blender (run headless) and exports public/models/table.glb with meshopt compression. It's a stadium about 2.4 x 1.2 m with the felt at y = 0, and the file carries geometry and UVs in metres, with its materials named felt, leather, walnut and brass for the scene to replace.
+- Felt: MeshPhysicalMaterial, roughness 0.9, sheen 1 with a lighter sheen color and a sheen roughness of 0.8, and the normal map of TextureCan's snooker baize (CC0). Its albedo is a deeper green than the felt token, because the warm grade pulls green toward olive, and it renders as the reference's baize.
 - Printed lines: a canvas-drawn brass decal at low opacity for the betting line and the dealer position.
-- Rail: a padded profile swept around the oval in dark leather (rail #3A3329, roughness 0.5). Brass cup holders at each seat. A walnut edge under the rail.
+- Rail: a padded leather roll swept around the felt in panels that join between the seats, in rail #3A3329 with Poly Haven's smooth leather normal map (CC0) and a soft clearcoat. A walnut apron under it. Brass cup holders sit in real holes through the rail between the seats.
+- Loaded with three's own GLTFLoader and meshopt decoder, so nothing comes from a CDN.
 
 ## Cards
 - Poker size, 0.063 x 0.088 in world units, 0.3 mm thick with 3.2 mm rounded corners, all real geometry from objects/card.ts. Rows run the length of the card, so a morph target bends it along its long axis.

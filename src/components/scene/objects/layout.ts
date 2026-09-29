@@ -17,8 +17,6 @@ export const TABLE = {
   /** How far the padded rail reaches in over the felt. */
   rail: 0.12,
 };
-// Ten seats, the player's in the middle of the near side and the dealer's opposite it.
-export const SEATS = 10;
 
 export const SPOTS = {
   /** Where the hole cards land, in front of the player and behind the betting line. */
