@@ -47,11 +47,12 @@ One persistent React Three Fiber canvas (the Stage island) fixed behind the page
 - drei Environment with a warm interior HDRI from Poly Haven at low intensity, used for reflections only.
 - Three Lightformers above the table standing in for the pendant lamps, in lamp #F2D3A2.
 - One warm spot light as the key, with soft shadows on the high tier. Static objects use AccumulativeShadows baked once. Moving cards and chips use ContactShadows.
+- The blinds: a low, warm spot light from behind the player's left shoulder with a slatted cookie in its map, so soft bands of light cross the felt as in reference/hero-16x9.jpg and the camera side of the chips and cards is lit. A spot light's map only projects while it casts shadows, so the low tier goes without.
 - A very slow lamp flicker under 3% intensity.
 - Phase 3: a few hundred dust particles drifting slowly through the lamp light, high tier only.
 
 ## Lens and post
-- @react-three/postprocessing: DepthOfField focused on the table surface, Bloom with a high threshold so only lamps and brass highlights glow, Vignette, Noise at about 4% and a LUT for the warm grade, with AgX tone mapping.
+- @react-three/postprocessing: DepthOfField at half resolution focused on the table surface (at a quarter its edges step in blocks), Bloom with a high threshold so only lamps and brass highlights glow, Vignette, Noise at about 4% and a LUT for the warm grade, with AgX tone mapping.
 - Camera: about a 40mm equivalent, a field of view around 45 degrees.
 
 ## Camera path (phase 2)
