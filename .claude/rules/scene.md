@@ -34,9 +34,13 @@ One persistent React Three Fiber canvas (the Stage island) fixed behind the page
 - The deal: half the deck springs off the top card by card, flexed, arcs over under gravity and lands face down in a ribbon spread, then zips back onto the deck. The hole cards slide to the player's seat and turn over. The board cards on the table deal in sync with The Board section, a burn card before each street.
 
 ## Chips (phase 2)
-- 39 mm across and 3.3 mm thick, in instanced stacks through drei Instances.
-- A canvas texture draws the spotted edge inserts and the center inlay. Labels use drei Text and always have a DOM twin.
-- Clay material with roughness 0.8, in the token colors.
+- A Paulson-style clay chip, 39 mm across and 3.3 mm thick, turned from its profile in objects/chip.ts: a 0.5 mm rounded rim, so stacks show a dark seam between chips, and a 24 mm inlay set 0.15 mm into each face. Instanced stacks through drei Instances, each chip a few percent lighter or darker.
+- scripts/make-chip-maps.mjs draws the maps in public/textures:
+  - a colour map per clay, with six edge spots of inlaid clay running through the chip and onto each face, and a cream inlay with a brass foil ring and a faint guilloché rosette
+  - a normal map the clays share: a cross-hatched mould band, raised rings and the seams round each spot
+  - a roughness and metalness map they share: matte clay, satin paper on the inlay and foil for the ring
+- No dice and no printed text. Labels use drei Text on the inlay and always have a DOM twin.
+- Colours: cream with card-red spots, then panel, felt and card red with cream spots.
 - Phase 3: @react-three/rapier, loaded on the first chip interaction, lets visitors flick chips. Bodies sleep once they settle.
 
 ## Light

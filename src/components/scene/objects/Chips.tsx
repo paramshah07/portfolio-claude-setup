@@ -1,18 +1,16 @@
 import { Instance, Instances, Text } from '@react-three/drei';
+import { useLoader } from '@react-three/fiber';
 import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import type { StageProps } from '../Stage';
+import { CHIP, chipGeometry } from './chip';
 import garamond from './eb-garamond-500.woff?url';
 import { SPOTS } from './layout';
 
-const CHIP = { radius: 0.0195, height: 0.0033 };
-// Clay in the token colours, in the order The Table section colours its teams.
-const CLAYS = [
-  { body: '#F3EEE2', spot: '#9B3A2E' }, // cream
-  { body: '#363430', spot: '#F3EEE2' }, // panel
-  { body: '#2E4C3A', spot: '#F3EEE2' }, // felt
-  { body: '#9B3A2E', spot: '#F3EEE2' }, // card red
-];
+// Clay in the token colours, in the order The Table section colours its teams: cream with red
+// spots, then panel, felt and card red with cream spots. scripts/make-chip-maps.mjs draws them.
+const CLAYS = ['cream', 'panel', 'felt', 'red'];
+const MAPS = [...CLAYS.map((clay) => `/textures/chip-${clay}.webp`), '/textures/chip-normal.webp', '/textures/chip-orm.webp'];
 // Other players' stacks along the far rail, placed like the ones in the reference frames.
 const DECOR = [
   { x: -0.66, z: -0.33, clay: 1, count: 7 },
@@ -31,14 +29,20 @@ const SPACING = 0.055; // between the team stacks
  * The labels repeat the team names and counts The Table lists in the DOM.
  */
 export function Chips({ teams }: Pick<StageProps, 'teams'>) {
-  const { geometry, materials } = useMemo(() => ({ geometry: chipGeometry(), materials: CLAYS.map(clay) }), []);
-  useEffect(
-    () => () => {
-      geometry.dispose();
-      materials.forEach((m) => (m.map?.dispose(), m.dispose()));
-    },
-    [geometry, materials],
-  );
+  const maps = useLoader(THREE.TextureLoader, MAPS);
+  const { geometry, materials } = useMemo(() => {
+    const [normalMap, orm] = maps.slice(CLAYS.length);
+    return {
+      geometry: chipGeometry(),
+      // The shared map carries roughness in green and metalness in blue, so both scalars stay at 1.
+      materials: maps.slice(0, CLAYS.length).map((map) => {
+        map.colorSpace = THREE.SRGBColorSpace;
+        map.anisotropy = 8;
+        return new THREE.MeshStandardMaterial({ map, normalMap, roughnessMap: orm, metalnessMap: orm, roughness: 1, metalness: 1 });
+      }),
+    };
+  }, [maps]);
+  useEffect(() => () => [geometry, ...materials].forEach((o) => o.dispose()), [geometry, materials]);
 
   const stacks = [
     ...teams.map((team, i) => ({ x: SPOTS.stacks.x + i * SPACING, z: SPOTS.stacks.z, clay: i % CLAYS.length, count: team.members })),
@@ -55,6 +59,8 @@ export function Chips({ teams }: Pick<StageProps, 'teams'>) {
             return {
               position: [stack.x + (noise(n) - 0.5) * 0.0012, (k + 0.5) * CHIP.height, stack.z + (noise(n + 7) - 0.5) * 0.0012] as const,
               spin: noise(n + 13) * Math.PI * 2,
+              // Batches of clay never quite match: each chip a few percent lighter or darker.
+              shade: new THREE.Color().setScalar(0.97 + noise(n + 21) * 0.06),
             };
           }),
     ),
@@ -66,8 +72,8 @@ export function Chips({ teams }: Pick<StageProps, 'teams'>) {
         (chips, c) =>
           chips.length > 0 && (
             <Instances key={c} geometry={geometry} material={materials[c]} limit={chips.length} castShadow receiveShadow frames={1}>
-              {chips.map(({ position, spin }, k) => (
-                <Instance key={k} position={position} rotation-y={spin} />
+              {chips.map(({ position, spin, shade }, k) => (
+                <Instance key={k} position={position} rotation-y={spin} color={shade} />
               ))}
             </Instances>
           ),
@@ -82,7 +88,7 @@ export function Chips({ teams }: Pick<StageProps, 'teams'>) {
           anchorX="center"
           anchorY="middle"
           color="#231E18"
-          position={[stack.x, stack.count * CHIP.height + 0.0002, stack.z]}
+          position={[stack.x, stack.count * CHIP.height - CHIP.recess + 0.0001, stack.z]}
           rotation-x={-Math.PI / 2}
           receiveShadow
         >
@@ -98,54 +104,3 @@ const noise = (n: number) => {
   const x = Math.sin(n * 12.9898) * 43758.5453;
   return x - Math.floor(x);
 };
-
-// A cylinder whose UVs put the edge in the bottom fifth of the texture and the faces in the rest,
-// so one canvas texture covers the whole chip.
-function chipGeometry() {
-  const g = new THREE.CylinderGeometry(CHIP.radius, CHIP.radius, CHIP.height, 48);
-  const uv = g.attributes.uv as THREE.BufferAttribute;
-  const edge = 49 * 2; // the torso's vertices come first: (radial + 1) * (height + 1)
-  for (let i = 0; i < uv.count; i++) uv.setY(i, i < edge ? uv.getY(i) * 0.2 : 0.2 + uv.getY(i) * 0.8);
-  return g;
-}
-
-// The chip texture: the face in the top 256 x 256 and the edge, once round, in the 256 x 64 under
-// it. Edge inserts and the matching wedges on the face line up, since the cylinder measures both
-// by the same angle. The centre inlay is cream with a thin brass ring.
-function clay({ body, spot }: (typeof CLAYS)[number]) {
-  const canvas = document.createElement('canvas');
-  [canvas.width, canvas.height] = [256, 320];
-  const g = canvas.getContext('2d')!;
-  g.fillStyle = body;
-  g.fillRect(0, 0, 256, 320);
-
-  const inserts = 8;
-  const width = (Math.PI * 2) / inserts / 3;
-  g.fillStyle = spot;
-  for (let k = 0; k < inserts; k++) {
-    const a = (k / inserts) * Math.PI * 2;
-    const u = (a / (Math.PI * 2)) * 256;
-    const w = (width / (Math.PI * 2)) * 256;
-    for (const wrap of [0, 256]) g.fillRect(u - w / 2 + wrap, 256, w, 64);
-    // On the face, the texture's v runs up and the canvas runs down, so the angle flips.
-    g.beginPath();
-    g.arc(128, 128, 128, -a - width / 2, -a + width / 2);
-    g.arc(128, 128, 104, -a + width / 2, -a - width / 2, true);
-    g.fill();
-  }
-
-  g.fillStyle = '#F3EEE2';
-  g.beginPath();
-  g.arc(128, 128, 80, 0, Math.PI * 2);
-  g.fill();
-  g.strokeStyle = '#AD9773';
-  g.lineWidth = 3;
-  g.beginPath();
-  g.arc(128, 128, 72, 0, Math.PI * 2);
-  g.stroke();
-
-  const map = new THREE.CanvasTexture(canvas);
-  map.colorSpace = THREE.SRGBColorSpace;
-  map.anisotropy = 8;
-  return new THREE.MeshStandardMaterial({ map, roughness: 0.8 });
-}
