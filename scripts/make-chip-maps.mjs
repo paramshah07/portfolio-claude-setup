@@ -121,13 +121,20 @@ for (let y = 0; y < H; y++)
   }
 await sharp(normal, { raw: { width: W, height: H, channels: 3 } }).webp({ quality: 92 }).toFile('public/textures/chip-normal.webp');
 
-// Roughness in green and metalness in blue, as three.js reads them: matte clay with a little
-// variation, the edge a touch smoother from handling, satin paper on the inlay and foil for the ring.
+// Occlusion in red, roughness in green and metalness in blue, as three.js reads them.
+// - Occlusion darkens the inlay's rim, where the recess shades it, and the very top and bottom of
+//   the edge, where a stacked chip sits on the next.
+// - Roughness: matte clay with a little variation, the rounded rim worn smoother by handling so it
+//   catches the lamps, satin paper on the inlay and foil for the ring.
+const edgeRow = (i) => (Math.floor(i / W) - FACE) / (EDGE - 1); // 0 at the top of the rim, 1 at the bottom
+const ringDistance = (i) => Math.abs(Math.hypot((i % W) - C, Math.floor(i / W) - C) / MM - 12); // mm from the inlay's edge
 const orm = Buffer.alloc(W * H * 3);
 for (let i = 0; i < W * H; i++) {
   const edge = i >= FACE * W;
-  const rough = brassMask[i] > 127 ? 0.35 : inlayMask[i] > 127 ? 0.45 : (edge ? 0.6 : 0.68) + mottle[i] * 0.02;
-  [orm[i * 3], orm[i * 3 + 1], orm[i * 3 + 2]] = [255, Math.round(rough * 255), brassMask[i] > 127 ? 255 : 0];
+  const rim = edge ? Math.max(0, 1 - Math.min(edgeRow(i), 1 - edgeRow(i)) / 0.2) : 0; // 1 at the edge's top and bottom
+  const occlusion = edge ? 1 - 0.45 * rim ** 2 : 1 - 0.35 * Math.max(0, 1 - ringDistance(i) / 0.6);
+  const rough = brassMask[i] > 127 ? 0.35 : inlayMask[i] > 127 ? 0.45 : edge ? 0.6 - 0.15 * rim : 0.68 + mottle[i] * 0.02;
+  [orm[i * 3], orm[i * 3 + 1], orm[i * 3 + 2]] = [Math.round(occlusion * 255), Math.round(rough * 255), brassMask[i] > 127 ? 255 : 0];
 }
 await sharp(orm, { raw: { width: W, height: H, channels: 3 } }).webp({ quality: 92 }).toFile('public/textures/chip-orm.webp');
 console.log(`public/textures/chip-{${Object.keys(CLAYS).join(',')},normal,orm}.webp`);

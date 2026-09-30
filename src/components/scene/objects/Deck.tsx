@@ -21,6 +21,9 @@ const SPIN = 0.12; // how the squared deck sits on the felt
 // Each card turns about a point near its near end, so it stands up on that end.
 const PIVOT = CARD.h * 0.4;
 const STREETS = ['preflop', 'flop', 'turn', 'river'] as const;
+// No card lies quite flat: once it's down on its own it bows a little, ends up off the felt. The bend
+// curls toward the back, so a face-up card bows the other way.
+const BOW = 0.06;
 // The spring: this many cards leave the top of the deck, and land in a ribbon spread whose last
 // slot is here, each card a step to the left of the one after it.
 const SPRUNG = 26;
@@ -59,8 +62,9 @@ export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> 
     const back = atlasCell(atlasLayout, count, count - 1);
     return {
       // Satin stock: a clearcoat mirrors the lamps across the whole back and costs a lobe on every
-      // card pixel, so the sheen comes from the base layer alone.
-      material: new THREE.MeshStandardMaterial({ map: atlas, roughness: 0.42 }),
+      // card pixel, so the sheen comes from the base layer and the room's reflections, which the
+      // scene keeps dim for the felt.
+      material: new THREE.MeshStandardMaterial({ map: atlas, roughness: 0.42, envMapIntensity: 5 }),
       plain: cardGeometry(back, back),
       faces: new Map(atlasLayout.cards.map((code, i) => [code, cardGeometry(back, atlasCell(atlasLayout, count, i))])),
     };
@@ -79,13 +83,14 @@ export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> 
     });
     const tl = (timeline.current = gsap.timeline({ paused: true, defaults: { ease: 'power3.out' } }));
     const top = deal(tl, cards.current, bends.current, hole.length);
+    const bendOf = (card: THREE.Group) => bends.current[cards.current.indexOf(card)];
     let dealt = 0;
     let next = hole.length;
     let placed = 0;
     const unsubscribe = street.subscribe((now) => {
       for (; dealt < STREETS.indexOf(now); dealt++) {
         const count = streets[dealt].length;
-        dealStreet(tl, top[next], top.slice(next + 1, next + 1 + count), placed, dealt);
+        dealStreet(tl, top[next], top.slice(next + 1, next + 1 + count), placed, dealt, bendOf);
         next += 1 + count;
         placed += count;
       }
@@ -144,10 +149,12 @@ function slide(tl: gsap.core.Timeline, card: THREE.Group, to: { x: number; z: nu
   tl.to(card.rotation, { x: FLAT, z: spin, duration: 0.8 }, at);
 }
 
-// Turn a card face up about its long edge, lifting it just enough to clear the felt.
-function flip(tl: gsap.core.Timeline, card: THREE.Group, y: number, at: number) {
+// Turn a card face up about its long edge, lifting it just enough to clear the felt, and let it
+// settle into its bow.
+function flip(tl: gsap.core.Timeline, card: THREE.Group, bend: Bend, y: number, at: number) {
   const lift = () => void (card.position.y = y + (CARD.w / 2 + 0.004) * Math.sin(card.rotation.y));
   tl.to(card.rotation, { y: Math.PI, duration: 0.7, ease: 'expo.out', onUpdate: lift }, at);
+  tl.to(bend, { v: -BOW, duration: 0.5 }, at + 0.4);
 }
 
 // Fly a card from height y to `to` under gravity, rising `lift` first: level speed across and a
@@ -209,7 +216,7 @@ function deal(tl: gsap.core.Timeline, cards: THREE.Group[], bends: Bend[], dealt
     const spin = n ? -0.05 : 0.07;
     const at = tl.labels.deal + n * 0.3;
     slide(tl, card, pivot(SPOTS.seat.x + (n - (dealt - 1) / 2) * 0.07, SPOTS.seat.z, spin, true), rest(n), spin, at);
-    flip(tl, card, rest(n), at + 0.75);
+    flip(tl, card, bends[cards.indexOf(card)], rest(n), at + 0.75);
   });
   return top;
 }
@@ -217,17 +224,19 @@ function deal(tl: gsap.core.Timeline, cards: THREE.Group[], bends: Bend[], dealt
 // Burn the top card to the muck, then slide the street's cards onto the board, the first of them
 // at board position placed, and turn them over. k counts the streets, so each burn card lands on
 // the one before it.
-function dealStreet(tl: gsap.core.Timeline, burn: THREE.Group, cards: THREE.Group[], placed: number, k: number) {
+function dealStreet(tl: gsap.core.Timeline, burn: THREE.Group, cards: THREE.Group[], placed: number, k: number, bendOf: (card: THREE.Group) => Bend) {
   const at = tl.duration();
   const { muck, board } = SPOTS;
   const spin = [0.4, -0.2, 0.15][k];
   slide(tl, burn, pivot(muck.x + k * 0.01, muck.z, spin, false), rest(k), spin, at);
+  // The first burn card lies alone, face down, so it bows toward its back. The rest land on it.
+  if (k === 0) tl.to(bendOf(burn), { v: BOW, duration: 0.5 }, at + 0.6);
 
   cards.forEach((card, n) => {
     const j = placed + n;
     const spin = [0.01, -0.02, 0.015, -0.01, 0.02][j];
     const start = at + 0.4 + n * 0.15;
     slide(tl, card, pivot(board.x + (j - 2) * 0.072, board.z, spin, true), rest(0), spin, start);
-    flip(tl, card, rest(0), start + 0.75);
+    flip(tl, card, bendOf(card), rest(0), start + 0.75);
   });
 }

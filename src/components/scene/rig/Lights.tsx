@@ -95,6 +95,9 @@ export function Lights({ tier, onBaked }: { tier: Exclude<Tier, 'static'>; onBak
           shadow-camera-near={0.5}
           shadow-camera-far={3}
         />
+        {/* The felt's bounce: a faint green fill from below on card undersides and chip edges, and a
+            warmer, dimmer one from the room above. Shadows stay deep. */}
+        <hemisphereLight args={['#3A2A1E', '#1D503E', 0.35]} />
         {/* A spot light's map only projects while it casts shadows, so the low tier goes without. */}
         {tier !== 'low' && (
           <>

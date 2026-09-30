@@ -34,11 +34,21 @@ export function Chips({ teams }: Pick<StageProps, 'teams'>) {
     const [normalMap, orm] = maps.slice(CLAYS.length);
     return {
       geometry: chipGeometry(),
-      // The shared map carries roughness in green and metalness in blue, so both scalars stay at 1.
+      // The shared map carries occlusion in red, roughness in green and metalness in blue, so both
+      // scalars stay at 1. Reflections come back up from the scene's dim level for the clay's sheen.
       materials: maps.slice(0, CLAYS.length).map((map) => {
         map.colorSpace = THREE.SRGBColorSpace;
         map.anisotropy = 8;
-        return new THREE.MeshStandardMaterial({ map, normalMap, roughnessMap: orm, metalnessMap: orm, roughness: 1, metalness: 1 });
+        return new THREE.MeshStandardMaterial({
+          map,
+          normalMap,
+          aoMap: orm,
+          roughnessMap: orm,
+          metalnessMap: orm,
+          roughness: 1,
+          metalness: 1,
+          envMapIntensity: 4,
+        });
       }),
     };
   }, [maps]);
