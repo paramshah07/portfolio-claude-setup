@@ -1,10 +1,10 @@
 // The panel stores. Only the islands load this file, so these stay out of the first-paint bundle.
 import { atom } from 'nanostores';
 
-// street lives in index.ts because The Board's deal writes it from the motion pass, which loads
-// index.ts anyway. Importing it here also keeps nanostores in one chunk with the palette store,
+// street and handDealt live in index.ts because the motion pass reads and writes them too, and it
+// loads index.ts anyway. Importing it here also keeps nanostores in one chunk with the palette store,
 // instead of a file of its own that the nav would load before first paint.
-export { street } from './index';
+export { handDealt, street } from './index';
 
 /** Whether the performance HUD is open. The H key, the palette and the stats panel toggle it. */
 export const hud = atom(false);

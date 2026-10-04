@@ -2,7 +2,8 @@ import { useFrame, useLoader, useThree } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import gsap from 'gsap';
-import { street } from '../../../lib/state';
+import { useStore } from '@nanostores/react';
+import { handDealt, street } from '../../../lib/state';
 import type { StageProps } from '../Stage';
 import atlasLayout from './atlas.json';
 import { CARD, atlasCell, cardGeometry } from './card';
@@ -35,11 +36,11 @@ const G = 2.2;
 type Bend = { v: number };
 
 /**
- * The deck on the felt. Once the first frame is up, the camera pushes in and half the deck springs
+ * The deck on the felt. When the visitor asks for the hand, the camera pushes in and half the deck springs
  * off the top card by card, flexed, arcs over and lands face down in a ribbon spread, then zips back
  * onto the deck. The top two slide to the player's seat and turn over as the camera settles on the
- * hand, and each street of the board deals onto the middle of the table as The Board section writes
- * the street store, burning a card before each one.
+ * hand, and each street of the board deals onto the middle of the table as the equity readout's
+ * button writes the street store, burning a card before each one.
  */
 export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> & { ready: boolean }) {
   const atlas = useLoader(THREE.TextureLoader, '/cards/atlas.webp');
@@ -103,11 +104,13 @@ export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> 
     };
   }, []);
 
+  // The hand deals when the visitor asks for it, once the first frame is up.
+  const asked = useStore(handDealt);
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || !asked) return;
     timeline.current?.play();
     if (reduced()) timeline.current?.progress(1);
-  }, [ready]);
+  }, [ready, asked]);
 
   return (
     <>

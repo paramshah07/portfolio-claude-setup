@@ -3,7 +3,7 @@
 // still below the fold, so a slow or failed load leaves everything visible.
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { SECTIONS, activeSection, scrollProgress, street, tier } from '../../lib/state';
+import { SECTIONS, activeSection, handDealt, scrollProgress, street, tier } from '../../lib/state';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -35,10 +35,30 @@ else if (cue) {
   addEventListener('scroll', leave, { once: true, passive: true });
 }
 
+// The hand waits for the visitor: the hero's button, or a click anywhere on its table that isn't
+// on a link or a button. Only where there's a stage to deal it on, so not on the static tier.
+const hero = document.getElementById('the-deal');
+const dealButton = hero?.querySelector<HTMLButtonElement>('.deal-button');
+if (hero && dealButton && !reduce && tier.get() !== 'static') {
+  dealButton.hidden = false;
+  hero.classList.add('dealable');
+  const deal = () => handDealt.set(true);
+  dealButton.addEventListener('click', deal);
+  hero.addEventListener('click', (event) => void (!(event.target as Element).closest('a, button') && deal()));
+  // Once it's dealt, or once the stage gives way to the static tier, there's nothing to click.
+  const done = () => {
+    hero.classList.remove('dealable');
+    gsap.to(dealButton, { autoAlpha: 0, duration: 0.4, onComplete: () => void (dealButton.hidden = true) });
+  };
+  handDealt.listen((dealt) => dealt && done());
+  tier.listen((now) => now === 'static' && done());
+}
+
 const row = document.querySelector('#hand-history .row');
 const board = document.querySelector('#the-board .board');
 
-// The Board is fully dealt from the start unless it deals as you scroll.
+// The Board starts fully dealt if it's already in view when this runs, so nothing on screen
+// vanishes. Otherwise its streets wait for the equity readout's button.
 if (reduce || !belowFold(board)) street.set('river');
 
 // Opacity only, never visibility, so keyboard focus can still reach content before it reveals.
@@ -72,9 +92,8 @@ if (!reduce) {
     gsap.from(row.children, { x: -40, y: -24, rotation: -3, opacity: 0, duration: 0.7, ease: 'power3.out', stagger: 0.1, scrollTrigger: { trigger: row, start: at(85), once: true } });
   }
 
-  // The Board deals as you scroll: a burn card slides off, then the flop together, and the
-  // same for the turn and the river. One paused timeline keeps the streets in order even when
-  // a fast scroll crosses all three triggers at once.
+  // The Board deals a street each time the readout's button asks: a burn card slides off, then the
+  // street's cards. One paused timeline keeps the streets in order however fast the clicks come.
   if (belowFold(board)) {
     const deal = gsap.timeline({ paused: true });
     const streets = [...board.querySelectorAll('.street')];
@@ -85,20 +104,10 @@ if (!reduce) {
         .from(street.querySelectorAll('.card'), { y: -40, rotation: -2, opacity: 0, ...settle }, '-=0.2')
         .addLabel(`street-${i}`);
     });
-    let dealt = -1;
-    const landed = ['flop', 'turn', 'river'] as const;
-    streets.forEach((_, i) => {
-      ScrollTrigger.create({
-        trigger: board,
-        start: at(85 - i * 15),
-        once: true,
-        onEnter: () => {
-          if (i <= dealt) return;
-          dealt = i;
-          const time = deal.labels[`street-${i}`];
-          gsap.to(deal, { time, duration: time - deal.time(), ease: 'none', overwrite: true, onComplete: () => street.set(landed[i]) });
-        },
-      });
+    const landed = ['flop', 'turn', 'river'];
+    street.subscribe((now) => {
+      const time = deal.labels[`street-${landed.indexOf(now)}`];
+      if (time > deal.time()) gsap.to(deal, { time, duration: time - deal.time(), ease: 'none', overwrite: true });
     });
   }
 }

@@ -32,7 +32,7 @@ One persistent React Three Fiber canvas (the Stage island) fixed behind the page
 - scripts/make-card-faces.mjs sets the faces from Adrian Kennard's CC0 deck in scripts/cards/kennard (courts traced from Goodall & Son, recoloured to the tokens), with EB Garamond indices from scripts/cards/ranks.json, and packs them with public/cards/back.png into one atlas.
 - Material: MeshStandardMaterial on cream card stock, roughness 0.42 for the satin sheen. No clearcoat and no paper normal map: at the table's distances both read as glare and grain.
 - A full deck of 52. Only the cards content deals have faces; every other card is a back on both sides, so no card label shows that isn't on the page.
-- The deal: half the deck springs off the top card by card, flexed, arcs over under gravity and lands face down in a ribbon spread, then zips back onto the deck. The hole cards slide to the player's seat and turn over. The board cards on the table deal in sync with The Board section, a burn card before each street.
+- The deal waits until the visitor asks for the hand (the handDealt store, set by the hero's button, a click on its table or the equity readout's button). Then half the deck springs off the top card by card, flexed, arcs over under gravity and lands face down in a ribbon spread, then zips back onto the deck. The hole cards slide to the player's seat and turn over. The board cards on the table deal as the readout's button writes the street store, a burn card before each street.
 
 ## Chips (phase 2)
 - scripts/make-chip.py models the chip in Blender (run headless) and exports public/models/chip.glb with meshopt compression. It follows a Paulson card-suits mould, 39 mm across and 3.3 mm thick, with every part geometry and nothing painted on:

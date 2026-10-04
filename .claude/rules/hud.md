@@ -14,7 +14,9 @@ All three panels share one look: a brass frame around panel #363430, a small tit
 ## Equity readout
 The site's signature feature. As The Board deals, it shows how Param's hole cards (hand.hole in content) stand against one random opponent hand.
 
-- It runs street by street: preflop, flop, turn and river.
+- It runs street by street: preflop, flop, turn and river. It starts preflop, and its button (Deal the flop, Deal the turn, Deal the river) deals one street at a time by writing the street store, which The Board's cards and the stage's deck follow. The button also asks for the hand, so the stage deals the hole cards first. It's gone once the river is out.
+- A ladder keeps each street's equity as it lands, so the hand reads as a story.
+- On a wide screen it runs as one strip under the board, so the cards, the numbers and the button fit on one screen. On a phone it stacks.
 - Every street is exact. Preflop against a random hand is 2,097,572,400 matchups, too many for a visitor's browser, so node src/lib/poker/make-preflop.ts computes it once with a worker thread on every core and commits src/lib/poker/preflop.json. A test fails and prints that command if the hole cards in content.md stop matching it. Flop, turn and river use exact enumeration over every remaining runout and opponent hand.
 - It shows win, tie and loss percentages, equity (wins plus half the ties), the current made hand in plain words ("Two pair, aces and kings") and whether the number is exact or estimated.
 - The math runs in src/workers/equity.worker.ts with plain postMessage, so the main thread never blocks. Stale jobs are cancelled when the street changes.
