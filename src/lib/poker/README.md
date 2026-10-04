@@ -130,7 +130,7 @@ Against one known hand, `computeHeadsUp` enumerates only the board: 1,712,304 bo
 
 ## Preflop, computed once
 
-2,097,572,400 matchups would take about 28 seconds on one core of this laptop, and longer on a phone, so `make-preflop.ts` runs them once with a worker thread on every core. It slices the boards by their first two cards into 1,081 pieces, hands a piece to each thread as it frees up and adds up the counts. On an Apple M4 Pro with 12 threads it takes 3.3 s, 636 million matchups a second. Relabelling suits changes no result, so the file is keyed by starting hand (AKs) and serves any suited ace-king. If the hole cards in content.md change to a different starting hand, a test fails and prints the command to rerun:
+2,097,572,400 matchups would take about 28 seconds on one core of this laptop, and longer on a phone, so `make-preflop.ts` runs them once with a worker thread on every core. It slices the boards by their first two cards into 1,081 pieces, hands a piece to each thread as it frees up and adds up the counts. On an Apple M4 Pro with 12 threads it takes 3.3 s, 636 million matchups a second. Relabelling suits changes no result, so the file is keyed by starting hand (72o) and serves any offsuit seven-deuce. If the hole cards in content.md change to a different starting hand, a test fails and prints the command to rerun:
 
 ```
 node src/lib/poker/make-preflop.ts
@@ -144,24 +144,21 @@ On the flop and turn the readout lists every unseen card that improves Param's h
 
 ## Param's hand, street by street
 
-A♠ K♠ against one random hand, dealt the board from content.md:
+7♥ 2♠ against one random hand, dealt the board from content.md:
 
 | Street | Board | Param holds | Win | Tie | Loss | Equity | Matchups |
 |---|---|---|---|---|---|---|---|
-| Preflop | | Ace high | 66.220% | 1.650% | 32.130% | 67.045% | 2,097,572,400 |
-| Flop | Q♠ J♠ 7♦ | Ace high | 75.810% | 0.926% | 23.264% | 76.273% | 1,070,190 |
-| Turn | Q♠ J♠ 7♦ 2♣ | Ace high | 63.338% | 0.692% | 35.971% | 63.684% | 45,540 |
-| River | Q♠ J♠ 7♦ 2♣ T♠ | Royal flush | 100% | 0% | 0% | 100% | 990 |
+| Preflop | | Seven high | 31.710% | 5.747% | 62.543% | 34.584% | 2,097,572,400 |
+| Flop | K♣ Q♦ 7♦ | Pair of sevens | 57.116% | 4.477% | 38.407% | 59.354% | 1,070,190 |
+| Turn | K♣ Q♦ 7♦ 2♣ | Two pair, sevens and twos | 86.994% | 1.212% | 11.794% | 87.600% | 45,540 |
+| River | K♣ Q♦ 7♦ 2♣ 7♣ | Full house, sevens full of twos | 98.586% | 0.202% | 1.212% | 98.687% | 990 |
 
-Preflop, ace-king suited wins about two hands in three. The flop gives Param no pair yet, but 18 cards improve him and his equity climbs to 76%:
+Preflop, seven-deuce offsuit is the worst starting hand in hold'em: it wins about one hand in three. The flop pairs the seven, and five cards improve it further, so equity climbs to 59%:
 
-- T♠ makes a royal flush
-- 9♠, 8♠, 7♠, 6♠, 5♠, 4♠, 3♠ and 2♠ make a flush, ace high
-- T♥, T♦ and T♣ make a straight, ace high
-- A♥, A♦ and A♣ make a pair of aces
-- K♥, K♦ and K♣ make a pair of kings
+- 7♠ and 7♣ make three of a kind, sevens
+- 2♥, 2♦ and 2♣ make two pair, sevens and twos
 
-The 2♣ on the turn changes nothing but uses up one of his two chances, so equity falls to 64% with the same 18 outs. The river is the T♠, a royal flush. No opponent hand can tie it, so it wins all 990 matchups.
+A king or a queen isn't an out: it pairs the board, and everyone gets that pair. The 2♣ on the turn makes two pair and lifts equity to 88%, with four cards left that fill it up: 7♠ and 7♣ for sevens full, 2♥ and 2♦ for twos full. The river is the 7♣, sevens full of twos. Of the 990 hands left, only twelve beat it: pocket kings or queens (three each) for a bigger full house, and the last seven with a king or a queen (three each). The last seven with a two splits (two hands).
 
 ## Benchmarks
 
@@ -214,7 +211,7 @@ The fields are ordered by importance, and inside each field a higher rank is a h
 The categories are checked strongest first and each keeps only the bits it needs, which is the best five directly. Seven cards can't make a flush together with a full house or quads, so checking in order never hides a better hand. evaluate7 matches the best of its 21 subsets on 100,000 random hands, and the benchmark reproduces the published category counts for all 133,784,560 seven-card hands.
 
 **6. How do you know the numbers are right?**
-In layers. The five-card census gives 7,462 distinct values and the textbook counts. The seven-card census matches the published table. evaluate7 agrees with a brute-force best of 21, and Monte Carlo agrees with the exact numbers. The results match published equities too: ace-king suited against a random hand is 67.04% and pocket aces 85.2%. And the tests catch breakage: deleting either half of the three-of-a-kind formula fails six or eight of the 22.
+In layers. The five-card census gives 7,462 distinct values and the textbook counts. The seven-card census matches the published table. evaluate7 agrees with a brute-force best of 21, and Monte Carlo agrees with the exact numbers. The results match published equities too: seven-deuce offsuit against a random hand is 34.58%, ace-king suited 67.04% and pocket aces 85.2%. And the tests catch breakage: deleting either half of the three-of-a-kind formula fails six or eight of the 22.
 
 **7. Why precompute preflop but enumerate the flop live?**
 Preflop against a random hand is 2,097,572,400 matchups: about 28 seconds on one laptop core, 3.3 s on all 12. The flop is 1,070,190, which takes 14 ms. The preflop answer only changes when the hole cards do, so it's computed once and keyed by starting hand, and a test keeps it from going stale.
@@ -223,7 +220,7 @@ Preflop against a random hand is 2,097,572,400 matchups: about 28 seconds on one
 The enumeration is a generator that yields after each slice of runouts, 46 slices on the flop. After each slice the worker pauses through a MessageChannel, which lets any newer message run first, then checks whether its job is still the latest and stops if it isn't. setTimeout(0) would be clamped to 4 ms after a few nested calls, and terminating the worker would throw away its warmed-up JIT. The page also ignores any answer whose id isn't the latest.
 
 **9. What counts as an out?**
-A card that lifts Param's hand by more categories than it lifts the board alone. On Q♠ J♠ 7♦ the Q♥ gives Param a pair of queens but gives everyone that pair, so it isn't an out. With A♠ K♠ on A♦ 7♣ 2♥, a seven gives two pair to every hand with a pair, so it isn't one either. The rule only looks at categories, so a better kicker or a higher straight isn't listed.
+A card that lifts Param's hand by more categories than it lifts the board alone. On K♣ Q♦ 7♦ the K♥ gives Param two pair, kings and sevens, but it pairs the board, so everyone climbs the same one category and it isn't an out. With A♠ K♠ on A♦ 7♣ 2♥, a seven gives two pair to every hand with a pair, so it isn't one either. The rule only looks at categories, so a better kicker or a higher straight isn't listed.
 
 **10. How would you make it faster?**
-With A♠ K♠ the other three suits are interchangeable, so most runouts and opponent hands come in groups of up to six that share one answer, and suit isomorphism could skip all but one of each. The inner loop could also update the board's rank masks for the opponent's two cards instead of rebuilding them. A seven-card lookup table like the Two Plus Two evaluator is faster still, but it's about 130 MB, far too big to ship to a browser. One idea that didn't work: counting two suits per 32-bit word in one popcount pass ran 9% slower in V8, so the plain version stayed.
+With 7♥ 2♠ the two suits Param doesn't hold are interchangeable, so many runouts and opponent hands come in pairs that share one answer, and suit isomorphism could skip one of each. A suited hand like A♠ K♠ leaves three interchangeable suits and groups of up to six. The inner loop could also update the board's rank masks for the opponent's two cards instead of rebuilding them. A seven-card lookup table like the Two Plus Two evaluator is faster still, but it's about 130 MB, far too big to ship to a browser. One idea that didn't work: counting two suits per 32-bit word in one popcount pass ran 9% slower in V8, so the plain version stayed.
