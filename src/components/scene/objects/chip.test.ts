@@ -1,34 +1,25 @@
+import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
-import * as THREE from 'three';
-import { CHIP, MAP, chipGeometry } from './chip';
+import { CHIP } from './chip';
 
-const g = chipGeometry();
-const pos = g.attributes.position as THREE.BufferAttribute;
-const nor = g.attributes.normal as THREE.BufferAttribute;
-const uv = g.attributes.uv as THREE.BufferAttribute;
+// Each mesh's bounds straight from the glTF JSON chunk, so the test needs no loader or decoder.
+function bounds(file: string) {
+  const glb = readFileSync(file);
+  const json = JSON.parse(glb.subarray(20, 20 + glb.readUInt32LE(12)).toString());
+  return Object.fromEntries(
+    json.meshes.map((m: { name: string; primitives: { attributes: { POSITION: number } }[] }) => {
+      const { min, max } = json.accessors[m.primitives[0].attributes.POSITION];
+      return [m.name, { min, max }];
+    }),
+  ) as Record<string, { min: number[]; max: number[] }>;
+}
 
-test('the chip is 39 x 3.3 mm and every triangle faces out', () => {
-  const box = new THREE.Box3().setFromBufferAttribute(pos);
-  expect(box.max.x).toBeCloseTo(CHIP.radius, 7);
-  expect(box.max.y - box.min.y).toBeCloseTo(CHIP.height, 7);
-  const index = g.index!;
-  const [a, b, c, n] = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
-  for (let t = 0; t < index.count; t += 3) {
-    const [i, j, k] = [index.getX(t), index.getX(t + 1), index.getX(t + 2)];
-    a.fromBufferAttribute(pos, i);
-    const area = b.fromBufferAttribute(pos, j).sub(a).cross(c.fromBufferAttribute(pos, k).sub(a));
-    if (area.lengthSq() < 1e-24) continue;
-    expect(area.dot(n.fromBufferAttribute(nor, i).add(b.fromBufferAttribute(nor, j)).add(c.fromBufferAttribute(nor, k)))).toBeGreaterThan(0);
-  }
-});
-
-test('faces map inside the face square, and only the rim and edge onto the edge strip', () => {
-  const H = MAP.face + MAP.edge;
-  for (let i = 0; i < pos.count; i++) {
-    const [u, v, r] = [uv.getX(i), uv.getY(i), Math.hypot(pos.getX(i), pos.getZ(i))];
-    expect(u).toBeGreaterThanOrEqual(0);
-    expect(u).toBeLessThanOrEqual(1);
-    if (v <= MAP.edge / H + 1e-6) expect(r).toBeGreaterThanOrEqual(CHIP.radius - CHIP.rim - 1e-7);
-    else expect(v).toBeGreaterThanOrEqual((MAP.edge + MAP.pad) / H - 1e-6);
-  }
+test('the chip model has its four parts, 39 x 3.3 mm, with the label below the band', () => {
+  const parts = bounds('public/models/chip.glb');
+  expect(Object.keys(parts).sort()).toEqual(['body', 'inserts', 'label', 'ring']);
+  // The edge spots run right round the rim and through the chip.
+  expect(parts.inserts.max[0]).toBeCloseTo(CHIP.radius, 5);
+  expect(parts.inserts.max[1] - parts.inserts.min[1]).toBeCloseTo(CHIP.height, 5);
+  // So a label on the top chip of a stack sits where the scene expects it.
+  expect(parts.label.max[1]).toBeCloseTo(CHIP.height / 2 - CHIP.label, 5);
 });

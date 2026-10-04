@@ -35,12 +35,13 @@ One persistent React Three Fiber canvas (the Stage island) fixed behind the page
 - The deal: half the deck springs off the top card by card, flexed, arcs over under gravity and lands face down in a ribbon spread, then zips back onto the deck. The hole cards slide to the player's seat and turn over. The board cards on the table deal in sync with The Board section, a burn card before each street.
 
 ## Chips (phase 2)
-- A Paulson-style clay chip, 39 mm across and 3.3 mm thick, turned from its profile in objects/chip.ts: a 0.5 mm rounded rim, so stacks show a dark seam between chips, and a 24 mm inlay set 0.15 mm into each face. Instanced stacks through drei Instances, each chip a few percent lighter or darker.
-- scripts/make-chip-maps.mjs draws the maps in public/textures:
-  - a colour map per clay, with six edge spots of inlaid clay running through the chip and onto each face, and a cream inlay with a brass foil ring and a faint guilloché rosette
-  - a normal map the clays share: a cross-hatched mould band, raised rings and the seams round each spot
-  - a roughness and metalness map they share: matte clay, satin paper on the inlay and foil for the ring
-- No dice and no printed text. Labels use drei Text on the inlay and always have a DOM twin.
+- scripts/make-chip.py models the chip in Blender (run headless) and exports public/models/chip.glb with meshopt compression. It follows a Paulson card-suits mould, 39 mm across and 3.3 mm thick, with every part geometry and nothing painted on:
+  - a clay body with a rounded rim, so stacks show a dark seam between chips
+  - eight edge spots of a second clay, cut through the chip with booleans
+  - the four suits embossed round the band between the spots
+  - a label disc set 0.3 mm into each face, carrying a brass foil ring
+- The parts are separate meshes (body, inserts, label, ring). The scene draws each as one instanced mesh for every chip on the table, colouring the body and spots per chip, a few percent lighter or darker per chip as clay batches are.
+- Labels use drei Text on the label disc and always have a DOM twin.
 - Colours: cream with card-red spots, then panel, felt and card red with cream spots.
 - Phase 3: @react-three/rapier, loaded on the first chip interaction, lets visitors flick chips. Bodies sleep once they settle.
 
