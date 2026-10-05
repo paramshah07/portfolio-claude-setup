@@ -25,7 +25,7 @@ function overlap(a: Pose, b: Pose) {
 }
 const lowest = (p: Pose) => p.y - R * Math.abs(Math.sin(p.tilt)) - (H / 2) * Math.cos(p.tilt);
 
-test('it starts as two stacks of ten, side by side and apart', () => {
+test('it starts as two stacks side by side and apart', () => {
   const poses = riffle(0);
   poses.forEach((p, chip) => {
     const side = chip < STACK ? -1 : 1;
@@ -46,7 +46,7 @@ test('a riffle leaves one squared pile, alternating between the stacks from the 
     expect(p.y).toBeCloseTo((slot + 0.5) * H, 9);
     expect(p.chip < STACK).toBe(slot % 2 === 0);
   });
-  expect(stacks(1).left).toEqual([0, 10, 1, 11, 2, 12, 3, 13, 4, 14]);
+  expect(stacks(1)).toEqual({ left: [0, 5, 1, 6, 2], right: [7, 3, 8, 4, 9] });
 });
 
 test('each riffle ends where the next one starts', () => {

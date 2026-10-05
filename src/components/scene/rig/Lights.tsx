@@ -3,7 +3,8 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { Tier } from '../../../lib/state';
-import { TABLE_AT } from '../objects/layout';
+import { SPOTS, TABLE_AT } from '../objects/layout';
+import { look } from './Camera';
 
 const LAMP = '#F2D3A2';
 // The light the pendants throw on the felt. The lamp token is the glow of the shades, and baize lit
@@ -14,6 +15,10 @@ const KEY_COLOR = '#FFF8F0';
 const KEY = new THREE.Vector3(0.1, 1.3, -0.25);
 const POOL = new THREE.Vector3(0, 0, 0.1);
 const KEY_CANDELA = 2.4;
+// The fill from the seat, at full strength in the squeeze, the only shot that asks for it, on the
+// hole cards there.
+const FILL_CANDELA = 0.12;
+const HOLE_CARDS = new THREE.Vector3(0, 0.02, 0).add(SPOTS.seat).add(TABLE_AT);
 // Reflections only: low enough that the room's bulbs don't light the table themselves.
 export const REFLECTIONS = 0.06;
 // The felt the baked and contact shadows fall on: the straight middle of the stadium and as much of
@@ -128,8 +133,25 @@ export function Lights({ tier, onBaked }: { tier: Exclude<Tier, 'static'>; onBak
         )}
       </group>
       {bake && <Baked />}
+      <Fill />
     </>
   );
+}
+
+// A soft light from the camera on the hole cards, as strong as the shot asks: in the squeeze their
+// faces turn toward the player and away from the lamps. A narrow cone, so it doesn't pool on the
+// felt in front of them. Always there, at zero the rest of the time, so the shaders never change.
+function Fill() {
+  const light = useRef<THREE.SpotLight>(null);
+  useLayoutEffect(() => {
+    light.current!.target.position.copy(HOLE_CARDS);
+    light.current!.target.updateMatrixWorld();
+  }, []);
+  useFrame(({ camera }) => {
+    light.current!.position.copy(camera.position);
+    light.current!.intensity = FILL_CANDELA * look.fill;
+  });
+  return <spotLight ref={light} color={KEY_COLOR} intensity={0} angle={0.25} penumbra={1} decay={2} />;
 }
 
 // The blinds as the light sees them: soft-edged slats with gaps that let a little through.

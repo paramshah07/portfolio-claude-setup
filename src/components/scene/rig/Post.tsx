@@ -3,7 +3,7 @@ import { Bloom, DepthOfField, EffectComposer, LUT, ToneMapping } from '@react-th
 import { useLayoutEffect, useRef, type ComponentRef } from 'react';
 import * as THREE from 'three';
 import { LUTImageLoader } from 'three/examples/jsm/loaders/LUTImageLoader.js';
-import { focus } from './Camera';
+import { focus, look } from './Camera';
 
 const LUT_URL = '/luts/warm.png';
 useLoader.preload(LUTImageLoader, LUT_URL);
@@ -24,16 +24,21 @@ export function Post({ dof }: { dof: boolean }) {
   // The composer hands AgX back to the renderer in a passive effect, which can leave a frame on the
   // low tier drawn with no tone mapping at all. This hands it back in the same commit.
   useLayoutEffect(() => () => void (gl.toneMapping = THREE.AgXToneMapping), [gl]);
-  // Focus follows the spot on the felt the camera is looking at.
-  useFrame(() => void lens.current?.target?.copy(focus));
+  // Focus follows the spot on the felt the camera is looking at, as deep as the shot wants it.
+  useFrame(() => {
+    if (!lens.current) return;
+    lens.current.target?.copy(focus);
+    lens.current.cocMaterial.focusRange = look.depth;
+  });
 
   return (
     // With depth of field at a DPR of 2, multisampling costs frames at 120 Hz in the traces, and the
     // DPR smooths edges by itself. Everywhere else it multisamples.
     <EffectComposer multisampling={dof && dpr >= 2 ? 0 : 4}>
       {/* Half resolution: at a quarter, the blur's edges step in blocks round the cards and chips.
-          The range keeps everything on the table sharp while the room, 2 m and more away, stays soft. */}
-      {dof ? <DepthOfField ref={lens} target={focus} worldFocusRange={1.1} bokehScale={3} resolutionScale={0.5} /> : <></>}
+          The camera sets the range, which keeps the whole table sharp while the room, 2 m and more
+          away, stays soft, except in the squeeze. */}
+      {dof ? <DepthOfField ref={lens} target={focus} bokehScale={3} resolutionScale={0.5} /> : <></>}
       {/* A tight glow: a wide one spreads the plate's lamps into a warm veil over the felt. */}
       <Bloom mipmapBlur luminanceThreshold={2} luminanceSmoothing={0.5} intensity={0.12} radius={0.5} levels={5} />
       {/* postprocessing's default mode is AgX. */}

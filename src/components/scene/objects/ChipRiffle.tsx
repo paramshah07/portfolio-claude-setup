@@ -1,4 +1,3 @@
-import { ContactShadows } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -10,12 +9,15 @@ import { STACK, riffle } from './riffle';
 // One riffle for every 1.2 viewport heights of scroll.
 const PER = 1.2;
 const riffles = () => scrollY / (PER * innerHeight);
-// The pile at its tallest, the top half lifted off it in the cut, is 71 mm. The camera looks at its
-// middle from a little above, near enough that the widest moment, the stacks leaning out, still fits.
-const MIDDLE = 0.034;
-const CAMERA: [number, number, number] = [0, 0.066, 0.231];
+// The nav keeps a slot for it beside the name, shown from this width up.
+const WIDE = '(min-width: 64rem)';
+// The pile at its tallest, the top half lifted off it in the cut, is 38 mm. A long lens looks at its
+// middle from a little above, far enough back that the widest moment, the stacks leaning out, fits.
+const MIDDLE = 0.019;
+const CAMERA: [number, number, number] = [0, 0.037, 0.176];
+// Red and cream, which both stand out against the nav's dark rail and the room behind it.
 const RED = CLAYS[3];
-const BLACK = CLAYS[1];
+const CREAM = CLAYS[0];
 
 const matrix = new THREE.Matrix4();
 const position = new THREE.Vector3();
@@ -25,35 +27,24 @@ const one = new THREE.Vector3(1, 1, 1);
 const colour = new THREE.Color();
 
 /**
- * Ten red chips and ten black riffled in the top right corner as the page scrolls, a riffle for
- * about every screen. A canvas of its own over the page, so it sits above the sections the stage
- * goes behind. It draws only when the scroll moves, at a fixed resolution, and it's decoration:
- * hidden from assistive tech and from the pointer. It leaves quietly if its context is lost.
+ * Five red chips and five cream riffled beside the name in the nav as the page scrolls, a riffle
+ * for about every screen. A small canvas of its own in a slot the nav keeps for it, so it rides
+ * above the sections the stage goes behind. It draws only when the scroll moves, at a fixed
+ * resolution, and it's decoration: the slot hides it from assistive tech and the pointer. It
+ * leaves quietly if its context is lost, and while the nav is too narrow to show the slot.
  */
 export function ChipRiffle() {
   const [lost, setLost] = useState(false);
   const [shown, setShown] = useState(false);
-  if (lost) return null;
+  const slot = useSlot();
+  if (lost || !slot) return null;
   return createPortal(
-    <div
-      aria-hidden="true"
-      style={{
-        position: 'fixed',
-        top: '4.5rem',
-        right: '1.5rem',
-        width: '11rem',
-        height: '9rem',
-        zIndex: 'var(--z-nav)',
-        pointerEvents: 'none',
-        opacity: shown ? 1 : 0,
-        transition: 'opacity 600ms ease',
-      }}
-    >
+    <div style={{ height: '100%', opacity: shown ? 1 : 0, transition: 'opacity 600ms ease' }}>
       <Canvas
         dpr={Math.min(Math.max(1, devicePixelRatio), 2)}
         frameloop="demand"
         gl={{ antialias: true, alpha: true }}
-        camera={{ fov: 22, near: 0.05, far: 1, position: CAMERA }}
+        camera={{ fov: 16, near: 0.05, far: 1, position: CAMERA }}
         onCreated={({ gl, scene }) => {
           gl.toneMapping = THREE.AgXToneMapping;
           scene.environmentIntensity = REFLECTIONS;
@@ -65,7 +56,6 @@ export function ChipRiffle() {
           {/* Down so the camera, which looks at the origin, looks at the middle of the pile. */}
           <group position-y={-MIDDLE}>
             <Riffle onFirstFrame={() => setShown(true)} />
-            <ContactShadows scale={0.14} far={0.04} blur={1.6} opacity={0.6} resolution={256} color="#1B1009" />
           </group>
         </Suspense>
         {/* The lamp from above and in front, a warm rim from behind for the edges, and a little fill. */}
@@ -74,8 +64,21 @@ export function ChipRiffle() {
         <hemisphereLight args={['#F2D3A2', '#1B1009', 0.5]} />
       </Canvas>
     </div>,
-    document.body,
+    slot,
   );
+}
+
+// The nav's slot for the riffle while the screen is wide enough for the nav to show it.
+function useSlot() {
+  const [slot, setSlot] = useState<Element | null>(null);
+  useEffect(() => {
+    const wide = matchMedia(WIDE);
+    const update = () => setSlot(wide.matches ? document.querySelector('[data-riffle]') : null);
+    update();
+    wide.addEventListener('change', update);
+    return () => wide.removeEventListener('change', update);
+  }, []);
+  return slot;
 }
 
 function Riffle({ onFirstFrame }: { onFirstFrame: () => void }) {
@@ -87,7 +90,7 @@ function Riffle({ onFirstFrame }: { onFirstFrame: () => void }) {
   // Each chip turned a fixed amount about its own axis, so the spots never line up, and a few percent
   // lighter or darker than its clay, as batches are.
   const chips = useMemo(
-    () => Array.from({ length: 2 * STACK }, (_, chip) => ({ clay: chip < STACK ? RED : BLACK, spin: noise(chip + 5) * Math.PI * 2, shade: 0.97 + noise(chip + 61) * 0.06 })),
+    () => Array.from({ length: 2 * STACK }, (_, chip) => ({ clay: chip < STACK ? RED : CREAM, spin: noise(chip + 5) * Math.PI * 2, shade: 0.97 + noise(chip + 61) * 0.06 })),
     [],
   );
 

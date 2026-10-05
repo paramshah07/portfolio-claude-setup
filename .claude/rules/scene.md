@@ -28,11 +28,11 @@ One persistent React Three Fiber canvas (the Stage island) fixed behind the page
 - Loaded with three's own GLTFLoader and meshopt decoder, so nothing comes from a CDN.
 
 ## Cards
-- Poker size, 0.063 x 0.088 in world units, 0.3 mm thick with 3.2 mm rounded corners, all real geometry from objects/card.ts. Rows run the length of the card, dense enough for two morph targets: the bend along its long axis, and the peel, which curls the corner nearest the player up past upright so its index reads from the seat.
+- Poker size, 0.063 x 0.088 in world units, 0.3 mm thick with 3.2 mm rounded corners, all real geometry from objects/card.ts. Rows run the length of the card, dense enough for the morph targets: the bend along its long axis, then the peel, which curls the near end up from a fold 58 mm back to nearly upright, so the index in the face's near left corner reads from the seat. The peel is baked in six steps at evenly spaced curvatures and blended between neighbours, so the motion follows the curl.
 - scripts/make-card-faces.mjs sets the faces from Adrian Kennard's CC0 deck in scripts/cards/kennard (courts traced from Goodall & Son, recoloured to the tokens), with EB Garamond indices from scripts/cards/ranks.json, and packs them with public/cards/back.png into one atlas.
 - Material: MeshStandardMaterial on cream card stock, roughness 0.42 for the satin sheen. No clearcoat and no paper normal map: at the table's distances both read as glare and grain.
 - A full deck of 52. Only the cards content deals have faces; every other card is a back on both sides, so no card label shows that isn't on the page.
-- The deal waits until the visitor asks for the hand (the handDealt store, set by the hero's button, a click on its table or the equity readout's button). Then half the deck springs off the top card by card, flexed, arcs over under gravity and lands face down in a ribbon spread, then zips back onto the deck. The hole cards slide to the player's seat face down, the player peels up each near corner in turn to see them, and they turn face up. The board cards on the table deal as the readout's button writes the street store, a burn card before each street.
+- The deal waits until the visitor asks for the hand (the handDealt store, set by the hero's button, a click on its table or the equity readout's button). Then half the deck springs off the top card by card, flexed, arcs over under gravity and lands face down in a ribbon spread, then zips back onto the deck. The hole cards slide to the player's seat face down, the first onto the second, 17 mm to its left and 6 mm back, as a player squares them to look. The player lifts the near end of both together, the card underneath curling 3% less so the top one stays inside its curl, then lays them down, spreads them and turns them face up. The board cards on the table deal as the readout's button writes the street store, a burn card before each street.
 
 ## Chips (phase 2)
 - scripts/make-chip.py models the chip in Blender (run headless) and exports public/models/chip.glb with meshopt compression. It follows a Paulson card-suits mould, 39 mm across and 3.3 mm thick, with every part geometry and nothing painted on:
@@ -51,6 +51,7 @@ One persistent React Three Fiber canvas (the Stage island) fixed behind the page
 - One warm spot light as the key, with soft shadows on the high tier. Static objects use AccumulativeShadows baked once. Moving cards and chips use ContactShadows.
 - The blinds: a low, warm spot light from behind the player's left shoulder with a slatted cookie in its map, so soft bands of light cross the felt as in reference/hero-16x9.jpg and the camera side of the chips and cards is lit. A spot light's map only projects while it casts shadows, so the low tier goes without.
 - A very slow lamp flicker under 3% intensity.
+- A fill: a narrow, soft spot light from the camera on the hole cards, at zero except in the squeeze, where their faces turn toward the player and away from the lamps.
 - Phase 3: a few hundred dust particles drifting slowly through the lamp light, high tier only.
 
 ## Lens and post
@@ -61,14 +62,14 @@ One persistent React Three Fiber canvas (the Stage island) fixed behind the page
 The deck moves four weights in layout.ts (dealShot) that the camera blends toward, each over the ones before it, handing back to the scroll path over the first 15% of the page:
 - Open: once the stage shows, the camera eases up from the plate's low seat and tilts down, so the felt fills the lower half of the frame with the deck and the chips in view, the room soft above it.
 - Close: as the deal starts, it pushes in low over the near rail so the spring and the spread fill the right half of the frame, clear of the hero's copy, as in the concept video.
-- Peel: as the hole cards slide to the seat, it comes round to the player's own view, low over the seat and looking down at the cards in the right half of the frame, while their corners lift.
+- Peel: as the hole cards slide to the seat, it drops to the player's own view, low behind the seat and nearly level with the cards in the right half of the frame, as in a squeeze. The focus range closes to 0.25 m so the table behind goes soft, and a soft fill from the seat lights the faces, which turn away from the lamps.
 - Hand: once they turn face up, it settles on the hand from above the seat, the cards readable in the lower middle and the chips to the right.
 
 ## Chip riffle
-- A second, small canvas fixed in the top right corner under the nav (objects/ChipRiffle.tsx), mounted with the scene so it never loads on the static tier. It sits over the page, so it's decoration only: aria-hidden, no pointer events and no text.
-- Ten card-red chips and ten panel chips from chip.glb riffle as the page scrolls, about one riffle per 1.2 screens. The middle finger lifts the stacks' inner edges, the chips tip off one at a time from each side in turn and fall into a zipper of two overlapping columns, the pile is pushed square, and its top half is cut off beside it for the next riffle.
+- A second, small canvas (objects/ChipRiffle.tsx) in a 96 x 48 px slot the nav keeps beside the name, mounted with the scene so it never loads on the static tier. Under 1024 px the nav has no room, so the slot hides and the canvas unmounts. It's decoration only: the slot is aria-hidden and takes no pointer events, and there's no text.
+- Five card-red chips and five cream chips from chip.glb riffle as the page scrolls, about one riffle per 1.2 screens: few enough that each chip reads at the height of the nav, in colours that stand out against its dark rail. The middle finger lifts the stacks' inner edges, the chips tip off one at a time from each side in turn and fall into a zipper of two overlapping columns, the pile is pushed square, and its top half is cut off beside it for the next riffle.
 - objects/riffle.ts is a pure function of scroll, so scrolling back runs it backwards. Its test checks every chip against every other, front on, at a thousand points per riffle, so no chip ever passes through another.
-- It draws only when the scroll moves, damped so a wheel's steps glide, at a fixed DPR of up to 2 with MSAA, so its resolution never changes. It shares the stage's reflections and chip materials and has its own contact shadow.
+- It draws only when the scroll moves, damped so a wheel's steps glide, at a fixed DPR of up to 2 with MSAA, so its resolution never changes. It shares the stage's reflections and chip materials.
 
 ## Camera path (phase 2)
 One camera pose per section, matched to the reference frames and interpolated with a ScrollTrigger scrub (power2.inOut):

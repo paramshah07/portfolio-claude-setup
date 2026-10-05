@@ -6,7 +6,7 @@ import { useStore } from '@nanostores/react';
 import { handDealt, street } from '../../../lib/state';
 import type { StageProps } from '../Stage';
 import atlasLayout from './atlas.json';
-import { CARD, atlasCell, cardGeometry } from './card';
+import { CARD, atlasCell, cardGeometry, setMorphs } from './card';
 import { SPOTS, dealShot } from './layout';
 
 // A full deck. Only the cards content deals ever show a face; every other card has the back on
@@ -29,6 +29,10 @@ const BOW = 0.06;
 // slot is here, each card a step to the left of the one after it.
 const SPRUNG = 26;
 const SPREAD = { x: SPOTS.deck.x - 0.09, z: SPOTS.deck.z + 0.09, step: 0.0072 };
+// The hole cards squared up to look at: the one on top this far to the left of the one under it,
+// so the index in its near left corner shows past the other's edge, and set back a little, so its
+// near end curls inside the other's and stands a little lower. Both are turned a little.
+const SQUEEZE = { offset: 0.017, back: 0.006, spin: 0.05 };
 // Gravity in m/s², slowed so an arc a few centimetres high reads on camera: real gravity lands a
 // card from the height of the deck in a tenth of a second.
 const G = 2.2;
@@ -38,10 +42,11 @@ type Bend = { v: number };
 /**
  * The deck on the felt. When the visitor asks for the hand, the camera pushes in and half the deck
  * springs off the top card by card, flexed, arcs over and lands face down in a ribbon spread, then
- * zips back onto the deck. The top two slide to the player's seat face down, the camera takes the
- * player's view as each near corner peels up to show its index, then they turn face up as the camera
- * settles on the hand. Each street of the board deals onto the middle of the table as the equity
- * readout's button writes the street store, burning a card before each one.
+ * zips back onto the deck. The top two slide to the player's seat face down, one on the other, and
+ * the camera drops to the player's view as they lift the near end of both to read them. Then they
+ * lay them down, spread them and turn them face up as the camera settles on the hand. Each street of
+ * the board deals onto the middle of the table as the equity readout's button writes the street
+ * store, burning a card before each one.
  */
 export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> & { ready: boolean }) {
   const atlas = useLoader(THREE.TextureLoader, '/cards/atlas.webp');
@@ -53,9 +58,10 @@ export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> 
   const timeline = useRef<gsap.core.Timeline>(null);
 
   // The order the deck deals in from the top: the hole cards, then a burn card before each street.
+  // The hole cards come off last first, so the first ends up on top of the squeeze, on the left.
   // Burn cards stay face down, so they're backs both ways.
   const streets = STREETS.slice(1).map((s) => board.filter((b) => b.street === s).map((b) => b.card));
-  const dealing = [...hole, ...streets.flatMap((cards) => [null, ...cards])];
+  const dealing = [...[...hole].reverse(), ...streets.flatMap((cards) => [null, ...cards])];
 
   // One texture upload, one material, and a geometry per face mapped to its cell of the atlas.
   const { material, plain, faces } = useMemo(() => {
@@ -74,12 +80,7 @@ export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> 
   }, [atlas, gl]);
   useEffect(() => () => [material, plain, ...faces.values()].forEach((o) => o.dispose()), [material, plain, faces]);
 
-  useFrame(() =>
-    meshes.current.forEach((mesh, i) => {
-      mesh.morphTargetInfluences![0] = bends.current[i].v;
-      mesh.morphTargetInfluences![1] = peels.current[i].v;
-    }),
-  );
+  useFrame(() => meshes.current.forEach((mesh, i) => setMorphs(mesh.morphTargetInfluences!, bends.current[i].v, peels.current[i].v)));
 
   // Squared up face down on the felt, then the spring, the hole cards and each street as the store
   // reaches it, all on one timeline so a street that arrives early waits for the deal before it.
@@ -191,8 +192,8 @@ function hop(tl: gsap.core.Timeline, card: THREE.Group, to: { x: number; y: numb
 // comes down, and lands face down in the spread, each on top of the one before and a step nearer
 // the deck, then slides a few millimetres. The spread zips back onto the deck nearest card first,
 // which puts every card back where it was. Then the top cards slide to the player's seat face down,
-// the player peels up each near corner to see them, and they turn face up. Returns the deck from
-// the top down.
+// each onto the one before, the player lifts their near end to read them, and they spread them and
+// turn them face up. Returns the deck from the top down.
 function deal(tl: gsap.core.Timeline, cards: THREE.Group[], bends: Bend[], peels: Bend[], dealt: number) {
   const { x, z } = SPOTS.deck;
   const top = [...cards].reverse();
@@ -226,33 +227,45 @@ function deal(tl: gsap.core.Timeline, cards: THREE.Group[], bends: Bend[], peels
     tl.to(card.rotation, { x: FLAT, y: 0, z: SPIN, duration: 0.42, ease: 'power2.inOut' }, at);
   });
 
-  // The hole cards slide to the seat face down while the camera comes round to the player's own
-  // view. The peel shot sits under the close one, so letting go of close moves straight to it.
+  // The hole cards slide to the seat face down, each onto the one before and a little to its left,
+  // while the camera comes down to the player's own view. The peel shot sits under the close one, so
+  // letting go of close moves straight to it.
   const hand = top.slice(0, dealt);
-  const spins = hand.map((_, n) => (n ? -0.05 : 0.07));
-  const seat = (n: number) => SPOTS.seat.x + (n - (dealt - 1) / 2) * 0.07;
+  const { offset, back, spin } = SQUEEZE;
+  const squeezed = (k: number) => {
+    const [across, along] = [((dealt - 1) / 2 - k) * offset, k * back];
+    const { x, z } = SPOTS.seat;
+    return pivot(x + across * Math.cos(spin) - along * Math.sin(spin), z - across * Math.sin(spin) - along * Math.cos(spin), spin, false);
+  };
   tl.addLabel('deal', '+=0.3');
   tl.set(dealShot, { peel: 1 }, 'deal');
   tl.to(dealShot, { close: 0, duration: 1.5, ease: 'power2.inOut' }, 'deal');
-  hand.forEach((card, n) => slide(tl, card, pivot(seat(n), SPOTS.seat.z, spins[n], false), rest(n), spins[n], tl.labels.deal + n * 0.3));
+  hand.forEach((card, k) => slide(tl, card, squeezed(k), rest(k), spin, tl.labels.deal + k * 0.35));
 
-  // The player lifts each near corner to see what they hold, the left card first, then lays both down.
-  tl.addLabel('peel', 'deal+=1.5');
-  hand.forEach((card, n) => {
+  // The player lifts the near end of both together to read them, holds a moment, and lays them down.
+  // Each card under another curls a little less, so the one on it stays inside its curl all the way.
+  tl.addLabel('peel', 'deal+=1.6');
+  hand.forEach((card, k) => {
     const peel = peels[cards.indexOf(card)];
-    tl.to(peel, { v: 1, duration: 0.55, ease: 'power2.out' }, tl.labels.peel + n * 0.45);
-    tl.to(peel, { v: 0, duration: 0.4, ease: 'power2.in' }, tl.labels.peel + 1.7 + n * 0.15);
+    tl.to(peel, { v: 1 - (dealt - 1 - k) * 0.03, duration: 0.9, ease: 'power2.inOut' }, 'peel');
+    tl.to(peel, { v: 0, duration: 0.5, ease: 'power2.in' }, 'peel+=2.2');
   });
 
-  // Then they turn face up where they lie and the camera settles on the hand. A card turns about its
-  // long edge, so its pivot shifts a few millimetres across as it goes over.
-  tl.addLabel('show', 'peel+=2.4');
+  // Then they spread them, the top one to the left, and turn them face up where they lie, as the
+  // camera settles on the hand. A card turns about its long edge, so its pivot shifts a few
+  // millimetres across as it goes over.
+  const spins = hand.map((_, n) => (n ? -0.05 : 0.07));
+  const seat = (n: number) => SPOTS.seat.x + (n - (dealt - 1) / 2) * 0.07;
+  tl.addLabel('show', 'peel+=2.8');
   tl.set(dealShot, { hand: 1 }, 'show');
   tl.to(dealShot, { peel: 0, duration: 1.4, ease: 'power2.inOut' }, 'show');
-  hand.forEach((card, n) => {
-    const at = tl.labels.show + 0.2 + n * 0.25;
+  hand.forEach((card, k) => {
+    const n = dealt - 1 - k;
+    tl.to(card.position, { ...pivot(seat(n), SPOTS.seat.z, spins[n], false), duration: 0.5, ease: 'power2.inOut' }, 'show');
+    tl.to(card.rotation, { z: spins[n], duration: 0.5, ease: 'power2.inOut' }, 'show');
+    const at = tl.labels.show + 0.5 + n * 0.25;
     tl.to(card.position, { x: pivot(seat(n), SPOTS.seat.z, spins[n], true).x, duration: 0.7, ease: 'expo.out' }, at);
-    flip(tl, card, bends[cards.indexOf(card)], rest(n), at);
+    flip(tl, card, bends[cards.indexOf(card)], rest(k), at);
   });
   return top;
 }
