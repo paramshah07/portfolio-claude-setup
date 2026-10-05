@@ -9,7 +9,7 @@ paths:
 Everything here is HTML and CSS with GSAP. The 3D stage adds depth behind it, but nothing here depends on the stage.
 
 ## Nav
-- Left: "Param" in EB Garamond, linking to the top.
+- Left: "Param" in EB Garamond, linking to the top. From 1024px wide the stage's chip riffle sits beside it, in a slot that holds its size from the first paint.
 - Right: Hand History, The Board, Showdown, a Résumé button, a ⌘K button (Ctrl K on Windows and Linux) and, in phase 3, a sound toggle.
 - Transparent over the hero. After the hero it sits on rail #3A3329 at 90% opacity with a light backdrop blur.
 - Under 768px the links move into a sheet opened by a menu button. The Résumé button stays visible.

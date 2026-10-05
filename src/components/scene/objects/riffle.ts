@@ -1,7 +1,7 @@
 import { CHIP } from './chip';
 
-/** Chips in each of the two stacks. */
-export const STACK = 10;
+/** Chips in each of the two stacks: few enough that each one reads at the height of the nav. */
+export const STACK = 5;
 const { radius: R, height: H } = CHIP;
 const GAP = 0.006; // between the stacks at rest
 const LEAN = 0.21; // how far the lifted stacks lean, about 12 degrees
@@ -9,10 +9,11 @@ const LEAN = 0.21; // how far the lifted stacks lean, about 12 degrees
 // columns overlapping by 40% and each stack rides on its own column until the pile is squared.
 const ZIP = 0.6 * R;
 const CUT_LIFT = 0.005; // how high the top half lifts as it's cut
-// How much of the fall each chip takes, and how far into its own drop the next chip starts. A chip
+// How far into a chip's drop the next one starts, and so how much of the fall each takes. A chip
 // tips down off the lifted edge first, then slides in onto the pile, and the next lands on it.
-const DROP = 0.06;
-const STEP = (1 - DROP) / (2 * STACK - 1);
+const LAG = 0.825;
+const DROP = 1 / (1 + LAG * (2 * STACK - 1));
+const STEP = LAG * DROP;
 const TIP = 0.45; // how much of its drop a chip takes to tip flat
 const SLIDE = 0.35; // and where in its drop it starts to slide in
 // Where each part of a riffle starts, as a fraction of it: a pause, then the press, the lift, the
@@ -38,8 +39,8 @@ const turn = (x: number, y: number, a: number) => [x * Math.cos(a) - y * Math.si
 
 /**
  * The two stacks at the start of riffle n, bottom to top, as chip numbers. The first starts with
- * chips 0 to 9 on the left and the rest on the right, and each one leaves the pile alternating
- * from the left, its bottom half on the left and its top half on the right.
+ * the first STACK chips on the left and the rest on the right, and each one leaves the pile
+ * alternating from the left, its bottom half on the left and its top half on the right.
  */
 export function stacks(n: number) {
   let left = Array.from({ length: STACK }, (_, i) => i);

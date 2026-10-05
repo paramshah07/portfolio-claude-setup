@@ -66,10 +66,10 @@ The deck moves four weights in layout.ts (dealShot) that the camera blends towar
 - Hand: once they turn face up, it settles on the hand from above the seat, the cards readable in the lower middle and the chips to the right.
 
 ## Chip riffle
-- A second, small canvas fixed in the top right corner under the nav (objects/ChipRiffle.tsx), mounted with the scene so it never loads on the static tier. It sits over the page, so it's decoration only: aria-hidden, no pointer events and no text.
-- Ten card-red chips and ten panel chips from chip.glb riffle as the page scrolls, about one riffle per 1.2 screens. The middle finger lifts the stacks' inner edges, the chips tip off one at a time from each side in turn and fall into a zipper of two overlapping columns, the pile is pushed square, and its top half is cut off beside it for the next riffle.
+- A second, small canvas (objects/ChipRiffle.tsx) in a 96 x 48 px slot the nav keeps beside the name, mounted with the scene so it never loads on the static tier. Under 1024 px the nav has no room, so the slot hides and the canvas unmounts. It's decoration only: the slot is aria-hidden and takes no pointer events, and there's no text.
+- Five card-red chips and five cream chips from chip.glb riffle as the page scrolls, about one riffle per 1.2 screens: few enough that each chip reads at the height of the nav, in colours that stand out against its dark rail. The middle finger lifts the stacks' inner edges, the chips tip off one at a time from each side in turn and fall into a zipper of two overlapping columns, the pile is pushed square, and its top half is cut off beside it for the next riffle.
 - objects/riffle.ts is a pure function of scroll, so scrolling back runs it backwards. Its test checks every chip against every other, front on, at a thousand points per riffle, so no chip ever passes through another.
-- It draws only when the scroll moves, damped so a wheel's steps glide, at a fixed DPR of up to 2 with MSAA, so its resolution never changes. It shares the stage's reflections and chip materials and has its own contact shadow.
+- It draws only when the scroll moves, damped so a wheel's steps glide, at a fixed DPR of up to 2 with MSAA, so its resolution never changes. It shares the stage's reflections and chip materials.
 
 ## Camera path (phase 2)
 One camera pose per section, matched to the reference frames and interpolated with a ScrollTrigger scrub (power2.inOut):
