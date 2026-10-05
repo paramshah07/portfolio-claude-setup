@@ -32,8 +32,13 @@ export const SPOTS = {
 };
 
 /**
- * The deal's camera, which the deck's timeline moves and the rig's camera follows: how far it has
- * pushed in on the deck for the spring (close), and how far it has settled on the dealt hand
- * afterwards (hand), each from 0 at the section's pose to 1.
+ * The deal's camera, which the deck's timeline moves and the rig's camera follows, each shot from 0
+ * at the section's pose to 1. Each shot sits over the ones before it in this list, so a shot under
+ * one at 1 can be set without the camera moving, and letting go of the top one moves it straight
+ * down to the next:
+ * - open: the table framed for the start, eased into once the stage shows
+ * - hand: the dealt hand face up, the shot the hero settles on
+ * - peel: the player's own view of the face-down hole cards as their corners lift
+ * - close: pushed in low over the rail for the spring
  */
-export const dealShot = { close: 0, hand: 0 };
+export const dealShot = { open: 0, hand: 0, peel: 0, close: 0 };

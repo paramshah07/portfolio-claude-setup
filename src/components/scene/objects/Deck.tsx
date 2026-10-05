@@ -36,11 +36,12 @@ const G = 2.2;
 type Bend = { v: number };
 
 /**
- * The deck on the felt. When the visitor asks for the hand, the camera pushes in and half the deck springs
- * off the top card by card, flexed, arcs over and lands face down in a ribbon spread, then zips back
- * onto the deck. The top two slide to the player's seat and turn over as the camera settles on the
- * hand, and each street of the board deals onto the middle of the table as the equity readout's
- * button writes the street store, burning a card before each one.
+ * The deck on the felt. When the visitor asks for the hand, the camera pushes in and half the deck
+ * springs off the top card by card, flexed, arcs over and lands face down in a ribbon spread, then
+ * zips back onto the deck. The top two slide to the player's seat face down, the camera takes the
+ * player's view as each near corner peels up to show its index, then they turn face up as the camera
+ * settles on the hand. Each street of the board deals onto the middle of the table as the equity
+ * readout's button writes the street store, burning a card before each one.
  */
 export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> & { ready: boolean }) {
   const atlas = useLoader(THREE.TextureLoader, '/cards/atlas.webp');
@@ -48,6 +49,7 @@ export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> 
   const cards = useRef<THREE.Group[]>([]);
   const meshes = useRef<THREE.Mesh[]>([]);
   const bends = useRef<Bend[]>(Array.from({ length: DECK }, () => ({ v: 0 })));
+  const peels = useRef<Bend[]>(Array.from({ length: DECK }, () => ({ v: 0 })));
   const timeline = useRef<gsap.core.Timeline>(null);
 
   // The order the deck deals in from the top: the hole cards, then a burn card before each street.
@@ -72,7 +74,12 @@ export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> 
   }, [atlas, gl]);
   useEffect(() => () => [material, plain, ...faces.values()].forEach((o) => o.dispose()), [material, plain, faces]);
 
-  useFrame(() => meshes.current.forEach((mesh, i) => (mesh.morphTargetInfluences![0] = bends.current[i].v)));
+  useFrame(() =>
+    meshes.current.forEach((mesh, i) => {
+      mesh.morphTargetInfluences![0] = bends.current[i].v;
+      mesh.morphTargetInfluences![1] = peels.current[i].v;
+    }),
+  );
 
   // Squared up face down on the felt, then the spring, the hole cards and each street as the store
   // reaches it, all on one timeline so a street that arrives early waits for the deal before it.
@@ -83,7 +90,7 @@ export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> 
       card.rotation.set(FLAT, 0, SPIN);
     });
     const tl = (timeline.current = gsap.timeline({ paused: true, defaults: { ease: 'power3.out' } }));
-    const top = deal(tl, cards.current, bends.current, hole.length);
+    const top = deal(tl, cards.current, bends.current, peels.current, hole.length);
     const bendOf = (card: THREE.Group) => bends.current[cards.current.indexOf(card)];
     let dealt = 0;
     let next = hole.length;
@@ -100,9 +107,17 @@ export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> 
     return () => {
       unsubscribe();
       tl.kill();
-      dealShot.close = dealShot.hand = 0;
+      Object.assign(dealShot, { open: 0, hand: 0, peel: 0, close: 0 });
     };
   }, []);
+
+  // Once the first frame is up, the camera eases from the plate's framing to the table's.
+  useEffect(() => {
+    if (!ready) return;
+    if (reduced()) return void (dealShot.open = 1);
+    const tween = gsap.to(dealShot, { open: 1, duration: 2.2, ease: 'power2.inOut', delay: 0.6 });
+    return () => void tween.kill();
+  }, [ready]);
 
   // The hand deals when the visitor asks for it, once the first frame is up.
   const asked = useStore(handDealt);
@@ -175,9 +190,10 @@ function hop(tl: gsap.core.Timeline, card: THREE.Group, to: { x: number; y: numb
 // stands up on its near end flexed, springs over in an arc, straightening and falling flat as it
 // comes down, and lands face down in the spread, each on top of the one before and a step nearer
 // the deck, then slides a few millimetres. The spread zips back onto the deck nearest card first,
-// which puts every card back where it was. Then the top cards slide to the player's seat, side by
-// side, and turn over as they land. Returns the deck from the top down.
-function deal(tl: gsap.core.Timeline, cards: THREE.Group[], bends: Bend[], dealt: number) {
+// which puts every card back where it was. Then the top cards slide to the player's seat face down,
+// the player peels up each near corner to see them, and they turn face up. Returns the deck from
+// the top down.
+function deal(tl: gsap.core.Timeline, cards: THREE.Group[], bends: Bend[], peels: Bend[], dealt: number) {
   const { x, z } = SPOTS.deck;
   const top = [...cards].reverse();
   // The camera pushes in on the deck first, and the spring starts as it arrives.
@@ -210,16 +226,33 @@ function deal(tl: gsap.core.Timeline, cards: THREE.Group[], bends: Bend[], dealt
     tl.to(card.rotation, { x: FLAT, y: 0, z: SPIN, duration: 0.42, ease: 'power2.inOut' }, at);
   });
 
-  // Out to the medium shot of the hand as the hole cards slide to the seat. The hand shot sits under
-  // the close one, so letting go of close moves the camera straight from one to the other.
+  // The hole cards slide to the seat face down while the camera comes round to the player's own
+  // view. The peel shot sits under the close one, so letting go of close moves straight to it.
+  const hand = top.slice(0, dealt);
+  const spins = hand.map((_, n) => (n ? -0.05 : 0.07));
+  const seat = (n: number) => SPOTS.seat.x + (n - (dealt - 1) / 2) * 0.07;
   tl.addLabel('deal', '+=0.3');
-  tl.set(dealShot, { hand: 1 }, 'deal');
-  tl.to(dealShot, { close: 0, duration: 1.6, ease: 'power2.inOut' }, 'deal');
-  top.slice(0, dealt).forEach((card, n) => {
-    const spin = n ? -0.05 : 0.07;
-    const at = tl.labels.deal + n * 0.3;
-    slide(tl, card, pivot(SPOTS.seat.x + (n - (dealt - 1) / 2) * 0.07, SPOTS.seat.z, spin, true), rest(n), spin, at);
-    flip(tl, card, bends[cards.indexOf(card)], rest(n), at + 0.75);
+  tl.set(dealShot, { peel: 1 }, 'deal');
+  tl.to(dealShot, { close: 0, duration: 1.5, ease: 'power2.inOut' }, 'deal');
+  hand.forEach((card, n) => slide(tl, card, pivot(seat(n), SPOTS.seat.z, spins[n], false), rest(n), spins[n], tl.labels.deal + n * 0.3));
+
+  // The player lifts each near corner to see what they hold, the left card first, then lays both down.
+  tl.addLabel('peel', 'deal+=1.5');
+  hand.forEach((card, n) => {
+    const peel = peels[cards.indexOf(card)];
+    tl.to(peel, { v: 1, duration: 0.55, ease: 'power2.out' }, tl.labels.peel + n * 0.45);
+    tl.to(peel, { v: 0, duration: 0.4, ease: 'power2.in' }, tl.labels.peel + 1.7 + n * 0.15);
+  });
+
+  // Then they turn face up where they lie and the camera settles on the hand. A card turns about its
+  // long edge, so its pivot shifts a few millimetres across as it goes over.
+  tl.addLabel('show', 'peel+=2.4');
+  tl.set(dealShot, { hand: 1 }, 'show');
+  tl.to(dealShot, { peel: 0, duration: 1.4, ease: 'power2.inOut' }, 'show');
+  hand.forEach((card, n) => {
+    const at = tl.labels.show + 0.2 + n * 0.25;
+    tl.to(card.position, { x: pivot(seat(n), SPOTS.seat.z, spins[n], true).x, duration: 0.7, ease: 'expo.out' }, at);
+    flip(tl, card, bends[cards.indexOf(card)], rest(n), at);
   });
   return top;
 }
