@@ -15,8 +15,11 @@ const { site } = (await getEntry('profile', 'main'))!.data;
       </div>
     </div>
   </div>
-  <!-- The motion pass shows this where there's a stage to deal on, and a click on the table works too. -->
-  <button type="button" class="button deal-button" hidden>Deal the hand</button>
+  <!-- The motion pass shows these where there's a stage to deal on: the first until the hand is
+       dealt, the second while the hole cards lie face down. A click on the table deals too, and a
+       click anywhere once they're down turns them up. -->
+  <button type="button" class="button deal-button" data-deal hidden>Deal the hand</button>
+  <button type="button" class="button deal-button" data-show hidden>Show the hand</button>
   <span class="cue" aria-hidden="true"></span>
 </section>
 
@@ -76,7 +79,7 @@ const { site } = (await getEntry('profile', 'main'))!.data;
     translate: -50% 0;
   }
 
-  .deal.dealable {
+  .deal.clickable {
     cursor: pointer;
   }
 

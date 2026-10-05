@@ -25,6 +25,14 @@ export { palette } from './palette';
 export const street = atom<Street>('preflop');
 /** Whether the visitor has asked for the hand: the hero's button or a click on its table. The stage deals once it's true. */
 export const handDealt = atom(false);
+/**
+ * Where the hole cards are: still in the deck, face down at the player's seat, or face up. The stage
+ * puts them down when they land, and the page turns them up when the visitor asks: a click anywhere
+ * that isn't on a control, or the hero's button.
+ */
+export const holeCards = atom<'deck' | 'down' | 'up'>('deck');
+/** Whether the hero's button for the face-down hole cards is hovered or focused. The stage squeezes them up while it is, as it does while the pointer is over them. */
+export const peek = atom(false);
 
 export function pickTier(env: { width: number; reducedMotion: boolean; webgl2: boolean; memory?: number }): Tier {
   // deviceMemory only exists in Chromium (in GB, capped at 8). Missing means unknown, not low.
