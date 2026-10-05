@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import * as THREE from 'three';
 import atlas from './atlas.json';
-import { BEND, CARD, atlasCell, cardGeometry } from './card';
+import { BEND, CARD, PEEL, atlasCell, cardGeometry, setMorphs } from './card';
 
 const count = atlas.cards.length + 1;
 const [back, face] = [atlasCell(atlas, count, count - 1), atlasCell(atlas, count, 0)];
@@ -61,14 +61,33 @@ test('the bend curls the ends round a cylinder and leaves the middle alone', () 
   }
 });
 
-test('the peel lifts the near left corner well clear and leaves the far half alone', () => {
-  const peel = g.morphAttributes.position![1];
-  let lift = 0;
-  for (const i of all) {
-    // The far half of the card never moves.
-    if (pos.getY(i) > 0) expect(Math.hypot(peel.getX(i), peel.getY(i), peel.getZ(i))).toBe(0);
-    // The corner itself lifts well clear of the felt.
-    if (pos.getX(i) < -CARD.w / 2 + 0.002 && pos.getY(i) < -CARD.h / 2 + CARD.r + 0.001) lift = Math.max(lift, peel.getZ(i));
+test('the peel curls the near end up a step at a time and leaves the rest on the felt', () => {
+  const steps = g.morphAttributes.position!.slice(1);
+  expect(steps).toHaveLength(PEEL.steps);
+  const fold = -CARD.h / 2 + PEEL.fold;
+  let last = 0;
+  for (const peel of steps) {
+    let lift = 0;
+    for (const i of all) {
+      if (pos.getY(i) >= fold) expect(Math.hypot(peel.getX(i), peel.getY(i), peel.getZ(i))).toBe(0);
+      lift = Math.max(lift, peel.getZ(i));
+    }
+    // Each step lifts the near edge higher than the one before.
+    expect(lift).toBeGreaterThan(last);
+    last = lift;
   }
-  expect(lift).toBeGreaterThan(0.009);
+  // At the last step the near edge stands nearly upright, about 3 cm off the felt.
+  expect(last).toBeGreaterThan(0.028);
+});
+
+test('the peel blends the two steps either side of it, so the curl grows evenly', () => {
+  const influences: number[] = [];
+  for (let peel = 0; peel <= 1; peel += 0.01) {
+    setMorphs(influences, 0.3, peel);
+    expect(influences[0]).toBe(0.3);
+    const steps = influences.slice(1);
+    expect(steps.filter((v) => v > 0).length).toBeLessThanOrEqual(2);
+    // The curvature the blend comes to, as a fraction of the last step's.
+    expect(steps.reduce((sum, v, s) => sum + (v * (s + 1)) / PEEL.steps, 0)).toBeCloseTo(peel, 9);
+  }
 });

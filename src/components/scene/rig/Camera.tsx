@@ -44,19 +44,30 @@ const flat = ({ at, look }: Pose) => {
 //   in view and the room soft above it.
 // - Hand: the face-up hole cards in the lower middle, the board's place above them and the chips to
 //   the right.
-// - Peel: from the player's seat, looking down at the hole cards as their near corners lift.
+// - Peel: low behind the player's seat, nearly level with the cards as their near end lifts, with
+//   the focus shallow so the table behind them goes soft, as in a squeeze, and a soft fill from the
+//   seat on the faces, which turn away from the lamps.
 // - Close: low over the near rail, looking a little left of the deck, so the spring and the spread
 //   fill the right half of the frame clear of the hero's copy.
-const shot = ({ at, look }: Pose) => ({ at: new THREE.Vector3(...at).add(TABLE_AT), look: new THREE.Vector3(...look).add(TABLE_AT) });
+// How deep the focus runs, in metres: on every other pose, the whole table. And none of the fill.
+const TABLE_DEPTH = 1.1;
+const shot = ({ at, look }: Pose, { depth = TABLE_DEPTH, fill = 0 } = {}) => ({
+  at: new THREE.Vector3(...at).add(TABLE_AT),
+  look: new THREE.Vector3(...look).add(TABLE_AT),
+  depth,
+  fill,
+});
 const SHOTS = [
   ['open', shot({ at: [0.04, 0.3, 0.86], look: [0.06, 0.03, -0.06] })],
   ['hand', shot({ at: [0.02, 0.3, 0.78], look: [0.03, 0, 0.16] })],
-  ['peel', shot({ at: [-0.12, 0.15, 0.52], look: [-0.075, 0, 0.34] })],
+  ['peel', shot({ at: [-0.075, 0.075, 0.52], look: [-0.04, 0.02, 0.33] }, { depth: 0.25, fill: 1 })],
   ['close', shot({ at: [-0.04, 0.13, 0.52], look: [0.02, 0.05, 0.05] })],
 ] as const;
 
 /** Where the camera is looking, for the depth of field to focus on. */
 export const focus = new THREE.Vector3();
+/** What the shot asks of the lens and the light: how deep the focus runs, and how much fill. */
+export const look = { depth: TABLE_DEPTH, fill: 0 };
 const offset = new THREE.Vector3();
 const right = new THREE.Vector3();
 
@@ -132,9 +143,13 @@ export function Camera() {
     const fade = THREE.MathUtils.clamp(1 - s.progress / 0.15, 0, 1);
     focus.set(pose.lx, pose.ly, pose.lz);
     offset.set(pose.x, pose.y, pose.z);
-    for (const [name, { at, look }] of SHOTS) {
-      focus.lerp(look, dealShot[name] * fade);
-      offset.lerp(at, dealShot[name] * fade);
+    Object.assign(look, { depth: TABLE_DEPTH, fill: 0 });
+    for (const [name, shot] of SHOTS) {
+      const weight = dealShot[name] * fade;
+      focus.lerp(shot.look, weight);
+      offset.lerp(shot.at, weight);
+      look.depth = THREE.MathUtils.lerp(look.depth, shot.depth, weight);
+      look.fill = THREE.MathUtils.lerp(look.fill, shot.fill, weight);
     }
     offset.sub(focus);
     offset.applyAxisAngle(THREE.Object3D.DEFAULT_UP, s.yaw);

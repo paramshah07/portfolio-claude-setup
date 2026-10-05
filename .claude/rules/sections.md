@@ -17,7 +17,7 @@ Everything here is HTML and CSS with GSAP. The 3D stage adds depth behind it, bu
 
 ## The Deal (hero)
 - Full viewport height. A left-aligned copy block over the room: the name as the display heading, the tagline, then two buttons: "View the hand" (scrolls to The Player) and "Résumé" (opens the PDF in a new tab).
-- The deal waits for the visitor: a "Deal the hand" button over the table, or a click anywhere on the table that isn't a link or a button. The button shows only where there's a stage to deal on, so not on the static tier. Then the camera pushes in for the spring, the two hole cards land face down at the player's seat, their corners peel up from the player's view and they turn face up.
+- The deal waits for the visitor: a "Deal the hand" button over the table, or a click anywhere on the table that isn't a link or a button. The button shows only where there's a stage to deal on, so not on the static tier. Then the camera pushes in for the spring, the two hole cards land face down at the player's seat, one on the other, the camera drops to the player's view as their near ends lift together to show both indices, and they're spread and turned face up.
 - A quiet scroll cue at the bottom: a thin brass line that grows downward and disappears after the first scroll.
 - Static tier: the still plate with the copy block and no animation.
 

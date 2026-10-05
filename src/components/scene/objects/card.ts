@@ -5,13 +5,25 @@ export const CARD = { w: 0.063, h: 0.088, t: 0.0003, r: 0.0032 };
 /** The radius the bend morph target curls the long axis round: the ends lift about 36 degrees. */
 export const BEND = 0.07;
 /**
- * The peel: the corner nearest the player lifted, as a player squeezes it up to look at a face-down
- * card. Face down, that corner holds the face's second index, which then reads upright from the
- * seat. The fold runs from `across` in along the near edge to `along` up the side, and the corner
- * curls round a cylinder of this radius, past upright to about 130 degrees at its tip, so the face
- * turns up toward the player.
+ * The peel: a player lifting the near end of their cards to read them. Beyond a fold `fold` from the
+ * near edge the card stays down, and from there it curls up round a cylinder, tighter as the peel
+ * goes on, until the near edge stands at `angle`, nearly upright, so the index in the near left
+ * corner of the face reads from the seat. The curl is baked as `steps` morph targets after the bend,
+ * at evenly spaced curvatures, so blending neighbouring steps follows the curl instead of cutting
+ * across it. See setMorphs.
  */
-export const PEEL = { across: 0.03, along: 0.04, radius: 0.0105 };
+export const PEEL = { fold: 0.058, angle: 1.3, steps: 6 };
+
+/**
+ * Sets a card's morph influences from its bend and its peel, from 0 (flat) to 1, blending the two
+ * peel steps either side of it.
+ */
+export function setMorphs(influences: number[], bend: number, peel: number) {
+  influences[0] = bend;
+  const at = Math.min(Math.max(peel, 0), 1) * PEEL.steps;
+  const below = Math.min(Math.floor(at), PEEL.steps - 1);
+  for (let step = 1; step <= PEEL.steps; step++) influences[step] = step === below ? below + 1 - at : step === below + 1 ? at - below : 0;
+}
 
 /** An atlas cell in texture space, v up. */
 export type Cell = { u0: number; v0: number; u1: number; v1: number };
@@ -19,9 +31,9 @@ export type Cell = { u0: number; v0: number; u1: number; v1: number };
 /**
  * A card with real thickness and rounded corners, centred on the origin: the back faces +z and the
  * face -z, each mapped to its atlas cell and reading upright from its own side. Rows run across the
- * card from end to end, narrowing round the corners, dense enough for two morph targets: the bend,
- * which curls the card round a cylinder of radius BEND at influence 1 (and the other way at -1), and
- * the peel, which curls up the near left corner. The edge takes the back's border colour.
+ * card from end to end, narrowing round the corners, dense enough for the morph targets: the bend,
+ * which curls the card round a cylinder of radius BEND at influence 1 (and the other way at -1),
+ * then the steps of the peel, which curls up the near end. The edge takes the back's border colour.
  */
 export function cardGeometry(back: Cell, face: Cell, { across = 12, along = 24, arc = 6 } = {}) {
   const { w, h, t, r } = CARD;
@@ -108,33 +120,29 @@ export function cardGeometry(back: Cell, face: Cell, { across = 12, along = 24, 
     turned.push(0, ny * c - nz * s - ny, ny * s + nz * c - nz);
   }
 
-  // The peel as offsets, the same curl about the fold line instead: d is how far a point lies past
-  // the fold toward the corner, along the fold's normal n, and only points past it move.
-  const [ax, ay] = [-w / 2 + PEEL.across, -h / 2];
-  const len = Math.hypot(PEEL.across, PEEL.along);
-  const [nx0, ny0] = [-PEEL.along / len, -PEEL.across / len];
-  const peeled: number[] = [];
-  const tipped: number[] = [];
-  for (let i = 0; i < position.length; i += 3) {
-    const [x, y, z] = [position[i], position[i + 1], position[i + 2]];
-    const d = (x - ax) * nx0 + (y - ay) * ny0;
-    if (d <= 0) {
-      peeled.push(0, 0, 0);
-      tipped.push(0, 0, 0);
-      continue;
+  // Each step of the peel as offsets, the same curl about the fold instead, at curvature k: d is how
+  // far a point lies past the fold toward the near edge, and only points past it move.
+  const fold = -h / 2 + PEEL.fold;
+  const steps = Array.from({ length: PEEL.steps }, (_, step) => {
+    const k = ((step + 1) / PEEL.steps) * (PEEL.angle / PEEL.fold);
+    const peeled: number[] = [];
+    const tipped: number[] = [];
+    for (let i = 0; i < position.length; i += 3) {
+      const [y, z, ny, nz] = [position[i + 1], position[i + 2], normal[i + 1], normal[i + 2]];
+      const d = fold - y;
+      if (d <= 0) {
+        peeled.push(0, 0, 0);
+        tipped.push(0, 0, 0);
+        continue;
+      }
+      const [s, c] = [Math.sin(k * d), Math.cos(k * d)];
+      peeled.push(0, d - (1 / k - z) * s, 1 / k - (1 / k - z) * c - z);
+      tipped.push(0, ny * c + nz * s - ny, nz * c - ny * s - nz);
     }
-    const a = d / PEEL.radius;
-    const [s, c] = [Math.sin(a), Math.cos(a)];
-    const out = (PEEL.radius - z) * s - d; // how far the point moves along n
-    peeled.push(out * nx0, out * ny0, PEEL.radius - (PEEL.radius - z) * c - z);
-    // The normal's part along n and its part along z turn together by the same angle.
-    const [vx, vy, vz] = [normal[i], normal[i + 1], normal[i + 2]];
-    const vn = vx * nx0 + vy * ny0;
-    const [vn2, vz2] = [vn * c - vz * s, vn * s + vz * c];
-    tipped.push((vn2 - vn) * nx0, (vn2 - vn) * ny0, vz2 - vz);
-  }
-  g.morphAttributes.position = [new THREE.Float32BufferAttribute(bent, 3), new THREE.Float32BufferAttribute(peeled, 3)];
-  g.morphAttributes.normal = [new THREE.Float32BufferAttribute(turned, 3), new THREE.Float32BufferAttribute(tipped, 3)];
+    return [new THREE.Float32BufferAttribute(peeled, 3), new THREE.Float32BufferAttribute(tipped, 3)];
+  });
+  g.morphAttributes.position = [new THREE.Float32BufferAttribute(bent, 3), ...steps.map(([p]) => p)];
+  g.morphAttributes.normal = [new THREE.Float32BufferAttribute(turned, 3), ...steps.map(([, n]) => n)];
   g.morphTargetsRelative = true;
   g.computeBoundingSphere();
   // Room for the bend, which the bounds don't see, so a curled card is never culled.
