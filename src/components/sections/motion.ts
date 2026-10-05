@@ -3,7 +3,7 @@
 // still below the fold, so a slow or failed load leaves everything visible.
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { SECTIONS, activeSection, handDealt, scrollProgress, street, tier } from '../../lib/state';
+import { SECTIONS, activeSection, handDealt, holeCards, peek, scrollProgress, street, tier } from '../../lib/state';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -35,23 +35,60 @@ else if (cue) {
   addEventListener('scroll', leave, { once: true, passive: true });
 }
 
-// The hand waits for the visitor: the hero's button, or a click anywhere on its table that isn't
-// on a link or a button. Only where there's a stage to deal it on, so not on the static tier.
+// The hand waits for the visitor: the hero's button, or a click anywhere on its table that isn't on
+// a control. Once the hole cards lie face down, a second button offers to show them: hovering or
+// focusing it squeezes them up to read, as the pointer over the cards does, and it, or a click
+// anywhere that isn't on a control, turns them face up. Only where there's a stage to deal on, so
+// not on the static tier.
 const hero = document.getElementById('the-deal');
-const dealButton = hero?.querySelector<HTMLButtonElement>('.deal-button');
-if (hero && dealButton && !reduce && tier.get() !== 'static') {
-  dealButton.hidden = false;
-  hero.classList.add('dealable');
-  const deal = () => handDealt.set(true);
-  dealButton.addEventListener('click', deal);
-  hero.addEventListener('click', (event) => void (!(event.target as Element).closest('a, button') && deal()));
-  // Once it's dealt, or once the stage gives way to the static tier, there's nothing to click.
-  const done = () => {
-    hero.classList.remove('dealable');
-    gsap.to(dealButton, { autoAlpha: 0, duration: 0.4, onComplete: () => void (dealButton.hidden = true) });
+const dealButton = hero?.querySelector<HTMLButtonElement>('[data-deal]');
+const showButton = hero?.querySelector<HTMLButtonElement>('[data-show]');
+if (hero && dealButton && showButton && !reduce && tier.get() !== 'static') {
+  const appear = (button: HTMLButtonElement) => {
+    button.hidden = false;
+    gsap.fromTo(button, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.4 });
   };
-  handDealt.listen((dealt) => dealt && done());
-  tier.listen((now) => now === 'static' && done());
+  // A button that leaves while it has focus hands focus to the hero's first link, so it isn't lost.
+  const leave = (button: HTMLButtonElement) => {
+    if (document.activeElement === button) hero.querySelector('a')?.focus();
+    gsap.to(button, { autoAlpha: 0, duration: 0.4, onComplete: () => void (button.hidden = true) });
+  };
+  dealButton.hidden = false;
+  hero.classList.add('clickable');
+  dealButton.addEventListener('click', () => handDealt.set(true));
+  showButton.addEventListener('click', () => holeCards.set('up'));
+  for (const [on, off] of [
+    ['pointerenter', 'pointerleave'],
+    ['focus', 'blur'],
+  ] as const) {
+    showButton.addEventListener(on, () => peek.set(true));
+    showButton.addEventListener(off, () => peek.set(false));
+  }
+  document.addEventListener('click', (event) => {
+    const target = event.target as Element;
+    if (target.closest('a, button, input, select, textarea, label, dialog')) return;
+    if (!handDealt.get()) hero.contains(target) && handDealt.set(true);
+    else if (holeCards.get() === 'down') holeCards.set('up');
+  });
+  handDealt.listen((dealt) => {
+    if (!dealt) return;
+    hero.classList.remove('clickable');
+    leave(dealButton);
+  });
+  holeCards.listen((now) => {
+    hero.classList.toggle('clickable', now === 'down');
+    if (now === 'down') appear(showButton);
+    if (now === 'up') {
+      peek.set(false);
+      leave(showButton);
+    }
+  });
+  // Once the stage gives way to the static tier, there's nothing to click.
+  tier.listen((now) => {
+    if (now !== 'static') return;
+    hero.classList.remove('clickable');
+    [dealButton, showButton].forEach(leave);
+  });
 }
 
 const row = document.querySelector('#hand-history .row');

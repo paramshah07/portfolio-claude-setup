@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { useStore } from '@nanostores/react';
-import { handDealt, street } from '../../../lib/state';
+import { handDealt, holeCards, peek, street } from '../../../lib/state';
 import type { StageProps } from '../Stage';
 import atlasLayout from './atlas.json';
 import { CARD, atlasCell, cardGeometry, setMorphs } from './card';
@@ -42,11 +42,12 @@ type Bend = { v: number };
 /**
  * The deck on the felt. When the visitor asks for the hand, the camera pushes in and half the deck
  * springs off the top card by card, flexed, arcs over and lands face down in a ribbon spread, then
- * zips back onto the deck. The top two slide to the player's seat face down, one on the other, and
- * the camera drops to the player's view as they lift the near end of both to read them. Then they
- * lay them down, spread them and turn them face up as the camera settles on the hand. Each street of
- * the board deals onto the middle of the table as the equity readout's button writes the street
- * store, burning a card before each one.
+ * zips back onto the deck. The top two slide to the player's seat face down, one on the other, as the
+ * camera drops to the player's view, and wait there. While the pointer is over them, or the hero's
+ * button for them is hovered or focused, the player lifts their near end to read them. When the
+ * visitor asks to see them, they're spread and turned face up as the camera settles on the hand.
+ * Each street of the board deals onto the middle of the table as the equity readout's button writes
+ * the street store, burning a card before each one, whether or not the hand is face up yet.
  */
 export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> & { ready: boolean }) {
   const atlas = useLoader(THREE.TextureLoader, '/cards/atlas.webp');
@@ -56,6 +57,8 @@ export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> 
   const bends = useRef<Bend[]>(Array.from({ length: DECK }, () => ({ v: 0 })));
   const peels = useRef<Bend[]>(Array.from({ length: DECK }, () => ({ v: 0 })));
   const timeline = useRef<gsap.core.Timeline>(null);
+  // The hole cards' places in the deck, in the order they're dealt off the top, the first underneath.
+  const hand = useMemo(() => hole.map((_, k) => DECK - 1 - k), [hole]);
 
   // The order the deck deals in from the top: the hole cards, then a burn card before each street.
   // The hole cards come off last first, so the first ends up on top of the squeeze, on the left.
@@ -80,7 +83,50 @@ export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> 
   }, [atlas, gl]);
   useEffect(() => () => [material, plain, ...faces.values()].forEach((o) => o.dispose()), [material, plain, faces]);
 
-  useFrame(() => meshes.current.forEach((mesh, i) => setMorphs(mesh.morphTargetInfluences!, bends.current[i].v, peels.current[i].v)));
+  // Squeezing the face-down hole cards up to read them, or laying them back down. Each card under
+  // another curls a little less, so the one on it stays inside its curl all the way.
+  const squeeze = (up: boolean) =>
+    hand.forEach((i, k) =>
+      gsap.to(peels.current[i], { v: up ? 1 - (hand.length - 1 - k) * 0.03 : 0, duration: up ? 0.8 : 0.45, ease: up ? 'power2.out' : 'power2.inOut', overwrite: true }),
+    );
+
+  // The pointer, in the stage's clip space. The stage sits behind the page and takes no pointer
+  // events, so this follows the window and the frame loop hit-tests the hole cards itself, against
+  // the room they take up lying down and squeezed (their bounds take in every morph), so a squeeze
+  // never moves them out from under the pointer.
+  const pointer = useRef({ at: new THREE.Vector2(9, 9), moved: true, over: false, looking: false });
+  const raycaster = useMemo(() => new THREE.Raycaster(), []);
+  const area = useRef<THREE.Box3>(null);
+  useEffect(() => {
+    const move = (e: PointerEvent) => {
+      pointer.current.at.set((e.clientX / innerWidth) * 2 - 1, 1 - (e.clientY / innerHeight) * 2);
+      pointer.current.moved = true;
+    };
+    const leave = () => {
+      pointer.current.at.set(9, 9);
+      pointer.current.moved = true;
+    };
+    addEventListener('pointermove', move, { passive: true });
+    document.documentElement.addEventListener('pointerleave', leave);
+    return () => {
+      removeEventListener('pointermove', move);
+      document.documentElement.removeEventListener('pointerleave', leave);
+    };
+  }, []);
+
+  useFrame(({ camera }) => {
+    meshes.current.forEach((mesh, i) => setMorphs(mesh.morphTargetInfluences!, bends.current[i].v, peels.current[i].v));
+    if (holeCards.get() !== 'down') return;
+    area.current ??= hand.reduce((box, i) => box.union(new THREE.Box3().setFromObject(meshes.current[i])), new THREE.Box3());
+    const p = pointer.current;
+    if (p.moved) {
+      p.moved = false;
+      raycaster.setFromCamera(p.at, camera);
+      p.over = raycaster.ray.intersectsBox(area.current);
+    }
+    const looking = p.over || peek.get();
+    if (looking !== p.looking) squeeze((p.looking = looking));
+  });
 
   // Squared up face down on the felt, then the spring, the hole cards and each street as the store
   // reaches it, all on one timeline so a street that arrives early waits for the deal before it.
@@ -91,7 +137,9 @@ export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> 
       card.rotation.set(FLAT, 0, SPIN);
     });
     const tl = (timeline.current = gsap.timeline({ paused: true, defaults: { ease: 'power3.out' } }));
-    const top = deal(tl, cards.current, bends.current, peels.current, hole.length);
+    const top = deal(tl, cards.current, bends.current, hole.length);
+    // The hole cards are down for the visitor to look at, or face up straight away without motion.
+    tl.call(() => holeCards.set(reduced() ? 'up' : 'down'));
     const bendOf = (card: THREE.Group) => bends.current[cards.current.indexOf(card)];
     let dealt = 0;
     let next = hole.length;
@@ -105,10 +153,21 @@ export function Deck({ hole, board, ready }: Pick<StageProps, 'hole' | 'board'> 
       }
       if (reduced()) tl.progress(1);
     });
+    // Turned face up when the visitor asks, which can only be once they're down.
+    let shown: gsap.core.Timeline | undefined;
+    const unlisten = holeCards.listen((now) => {
+      if (now !== 'up') return;
+      pointer.current.looking = false;
+      shown = turnUp(cards.current, bends.current, peels.current, hole.length);
+      if (reduced()) shown.progress(1);
+    });
     return () => {
       unsubscribe();
+      unlisten();
       tl.kill();
+      shown?.kill();
       Object.assign(dealShot, { open: 0, hand: 0, peel: 0, close: 0 });
+      holeCards.set('deck');
     };
   }, []);
 
@@ -192,9 +251,8 @@ function hop(tl: gsap.core.Timeline, card: THREE.Group, to: { x: number; y: numb
 // comes down, and lands face down in the spread, each on top of the one before and a step nearer
 // the deck, then slides a few millimetres. The spread zips back onto the deck nearest card first,
 // which puts every card back where it was. Then the top cards slide to the player's seat face down,
-// each onto the one before, the player lifts their near end to read them, and they spread them and
-// turn them face up. Returns the deck from the top down.
-function deal(tl: gsap.core.Timeline, cards: THREE.Group[], bends: Bend[], peels: Bend[], dealt: number) {
+// each onto the one before. Returns the deck from the top down.
+function deal(tl: gsap.core.Timeline, cards: THREE.Group[], bends: Bend[], dealt: number) {
   const { x, z } = SPOTS.deck;
   const top = [...cards].reverse();
   // The camera pushes in on the deck first, and the spring starts as it arrives.
@@ -242,21 +300,19 @@ function deal(tl: gsap.core.Timeline, cards: THREE.Group[], bends: Bend[], peels
   tl.to(dealShot, { close: 0, duration: 1.5, ease: 'power2.inOut' }, 'deal');
   hand.forEach((card, k) => slide(tl, card, squeezed(k), rest(k), spin, tl.labels.deal + k * 0.35));
 
-  // The player lifts the near end of both together to read them, holds a moment, and lays them down.
-  // Each card under another curls a little less, so the one on it stays inside its curl all the way.
-  tl.addLabel('peel', 'deal+=1.6');
-  hand.forEach((card, k) => {
-    const peel = peels[cards.indexOf(card)];
-    tl.to(peel, { v: 1 - (dealt - 1 - k) * 0.03, duration: 0.9, ease: 'power2.inOut' }, 'peel');
-    tl.to(peel, { v: 0, duration: 0.5, ease: 'power2.in' }, 'peel+=2.2');
-  });
+  return top;
+}
 
-  // Then they spread them, the top one to the left, and turn them face up where they lie, as the
-  // camera settles on the hand. A card turns about its long edge, so its pivot shifts a few
-  // millimetres across as it goes over.
+// The visitor asked to see the hole cards: laid down first if they're squeezing them, then spread,
+// the one on top to the left, and turned face up where they lie as the camera settles on the hand.
+// A card turns about its long edge, so its pivot shifts a few millimetres across as it goes over.
+function turnUp(cards: THREE.Group[], bends: Bend[], peels: Bend[], dealt: number) {
+  const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+  const hand = [...cards].reverse().slice(0, dealt);
+  hand.forEach((card) => tl.to(peels[cards.indexOf(card)], { v: 0, duration: 0.3, ease: 'power2.in', overwrite: true }, 0));
   const spins = hand.map((_, n) => (n ? -0.05 : 0.07));
   const seat = (n: number) => SPOTS.seat.x + (n - (dealt - 1) / 2) * 0.07;
-  tl.addLabel('show', 'peel+=2.8');
+  tl.addLabel('show', 0.25);
   tl.set(dealShot, { hand: 1 }, 'show');
   tl.to(dealShot, { peel: 0, duration: 1.4, ease: 'power2.inOut' }, 'show');
   hand.forEach((card, k) => {
@@ -267,7 +323,7 @@ function deal(tl: gsap.core.Timeline, cards: THREE.Group[], bends: Bend[], peels
     tl.to(card.position, { x: pivot(seat(n), SPOTS.seat.z, spins[n], true).x, duration: 0.7, ease: 'expo.out' }, at);
     flip(tl, card, bends[cards.indexOf(card)], rest(k), at);
   });
-  return top;
+  return tl;
 }
 
 // Burn the top card to the muck, then slide the street's cards onto the board, the first of them
