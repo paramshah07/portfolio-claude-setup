@@ -15,7 +15,7 @@ const KEY = new THREE.Vector3(0.1, 1.3, -0.25);
 const POOL = new THREE.Vector3(0, 0, 0.1);
 const KEY_CANDELA = 2.4;
 // Reflections only: low enough that the room's bulbs don't light the table themselves.
-const REFLECTIONS = 0.06;
+export const REFLECTIONS = 0.06;
 // The felt the baked and contact shadows fall on: the straight middle of the stadium and as much of
 // the rounded ends as fits under the rail, so neither catcher pokes out past the table.
 const FELT = { width: 1.95, depth: 0.9 };
@@ -152,7 +152,7 @@ function slatCookie() {
 }
 
 // Memoised, because drei's Environment bakes again on every render.
-const Reflections = memo(function Reflections() {
+export const Reflections = memo(function Reflections() {
   return (
     <Environment files={HDRI} resolution={256}>
       {PENDANTS.map((position, i) => (

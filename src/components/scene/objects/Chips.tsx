@@ -14,10 +14,10 @@ import { SPOTS } from './layout';
 const MODEL = '/models/chip.glb';
 const meshopt = (loader: GLTFLoader) => loader.setMeshoptDecoder(MeshoptDecoder);
 useLoader.preload(GLTFLoader, MODEL, meshopt);
-const PARTS = ['body', 'inserts', 'label', 'ring'] as const;
+export const PARTS = ['body', 'inserts', 'label', 'ring'] as const;
 // Clay in the token colours, in the order The Table section colours its teams: cream with card-red
 // spots, then panel, felt and card red with cream spots. The cream body is a shade under the label.
-const CLAYS = [
+export const CLAYS = [
   { body: '#E9E1CF', spot: '#9B3A2E' },
   { body: '#363430', spot: '#F3EEE2' },
   { body: '#2E4C3A', spot: '#F3EEE2' },
@@ -41,22 +41,7 @@ const SPACING = 0.055; // between the team stacks
  * The labels repeat the team names and counts The Table lists in the DOM.
  */
 export function Chips({ teams }: Pick<StageProps, 'teams'>) {
-  const { scene } = useLoader(GLTFLoader, MODEL, meshopt);
-  const { geometries, materials } = useMemo(() => {
-    // The clay and the spots take their colour from each chip, so one draw covers a part for every
-    // chip on the table. Reflections come back up from the scene's dim level for the clay's sheen.
-    const clay = new THREE.MeshStandardMaterial({ roughness: 0.65, envMapIntensity: 4 });
-    return {
-      geometries: Object.fromEntries(PARTS.map((part) => [part, (scene.getObjectByName(part) as THREE.Mesh).geometry])),
-      materials: {
-        body: clay,
-        inserts: clay,
-        label: new THREE.MeshStandardMaterial({ color: '#F3EEE2', roughness: 0.45, envMapIntensity: 4 }),
-        ring: new THREE.MeshStandardMaterial({ color: '#AD9773', metalness: 1, roughness: 0.35, envMapIntensity: 10 }),
-      },
-    };
-  }, [scene]);
-  useEffect(() => () => new Set(Object.values(materials)).forEach((m) => m.dispose()), [materials]);
+  const { geometries, materials } = useChip();
 
   const stacks = [
     ...teams.map((team, i) => ({ x: SPOTS.stacks.x + i * SPACING, z: SPOTS.stacks.z, clay: i % CLAYS.length, count: team.members })),
@@ -110,8 +95,34 @@ export function Chips({ teams }: Pick<StageProps, 'teams'>) {
   );
 }
 
+/**
+ * The chip's parts, each with the material it's drawn in. The clay and the spots take their colour
+ * from each chip, so one draw covers a part for every chip in a scene. Reflections come back up from
+ * the scene's dim level for the clay's sheen.
+ */
+export function useChip() {
+  const { scene } = useLoader(GLTFLoader, MODEL, meshopt);
+  const chip = useMemo(() => {
+    const clay = new THREE.MeshStandardMaterial({ roughness: 0.65, envMapIntensity: 4 });
+    return {
+      geometries: Object.fromEntries(PARTS.map((part) => [part, (scene.getObjectByName(part) as THREE.Mesh).geometry])) as Record<
+        (typeof PARTS)[number],
+        THREE.BufferGeometry
+      >,
+      materials: {
+        body: clay,
+        inserts: clay,
+        label: new THREE.MeshStandardMaterial({ color: '#F3EEE2', roughness: 0.45, envMapIntensity: 4 }),
+        ring: new THREE.MeshStandardMaterial({ color: '#AD9773', metalness: 1, roughness: 0.35, envMapIntensity: 10 }),
+      },
+    };
+  }, [scene]);
+  useEffect(() => () => new Set(Object.values(chip.materials)).forEach((m) => m.dispose()), [chip]);
+  return chip;
+}
+
 // A fixed pseudo-random number in [0, 1) for each integer.
-const noise = (n: number) => {
+export const noise = (n: number) => {
   const x = Math.sin(n * 12.9898) * 43758.5453;
   return x - Math.floor(x);
 };
