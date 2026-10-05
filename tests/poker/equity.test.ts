@@ -8,10 +8,10 @@ import type { EquityRequest, EquityResponse } from '../../src/workers/equity.wor
 import { draw, mulberry32 } from './random';
 
 // Param's hand from content.md, dealt street by street.
-const hole = ['As', 'Ks'];
-const flop = ['Qs', 'Js', '7d'];
+const hole = ['7h', '2s'];
+const flop = ['Kc', 'Qd', '7d'];
 const turn = [...flop, '2c'];
-const river = [...turn, 'Ts'];
+const river = [...turn, '7c'];
 
 /**
  * Equity by sampling runouts, against a random hand or a known one, with its interval: the
@@ -127,24 +127,18 @@ test('heads-up counts every runout: 1,712,304 preflop, 990 on the flop, 44 on th
 
 test("lists Param's flop outs by what they make, strongest first", () => {
   const { outs = [] } = computeEquity(hole, flop);
-  expect(outs.map((group) => group.makes)).toEqual([
-    'Royal flush',
-    'Flush, ace high',
-    'Straight, ace high',
-    'Pair of aces',
-    'Pair of kings',
-  ]);
-  expect(outs[0].text).toBe('T♠ makes a royal flush');
-  expect(outs[2].text).toBe('T♥, T♦ and T♣ make a straight, ace high');
-  expect(outs.flatMap((group) => group.cards)).toHaveLength(18);
-  // A queen or a seven only pairs the board, and everyone has that pair.
+  expect(outs.map((group) => group.makes)).toEqual(['Three of a kind, sevens', 'Two pair, sevens and twos']);
+  expect(outs[0].text).toBe('7♠ and 7♣ make three of a kind, sevens');
+  expect(outs[1].text).toBe('2♥, 2♦ and 2♣ make two pair, sevens and twos');
+  // A king or a queen only pairs the board, and everyone has that pair.
+  expect(outs.flatMap((group) => group.cards)).toHaveLength(5);
+  expect(outs.flatMap((group) => group.cards)).not.toContain('Kh');
   expect(outs.flatMap((group) => group.cards)).not.toContain('Qh');
-  expect(outs.flatMap((group) => group.cards)).not.toContain('7h');
 });
 
 test('a card that improves every hand the same way is not an out', () => {
-  // With aces already paired, a seven gives two pair to every hand holding a pair.
-  const { outs = [] } = computeEquity(hole, ['Ad', '7c', '2h']);
+  // Ace-king with aces already paired: a seven gives two pair to every hand holding a pair.
+  const { outs = [] } = computeEquity(['As', 'Ks'], ['Ad', '7c', '2h']);
   expect(outs.map((group) => group.text)).toContain('A♥ and A♣ make three of a kind, aces');
   expect(outs.map((group) => group.text)).toContain('K♥, K♦ and K♣ make two pair, aces and kings');
   expect(outs.flatMap((group) => group.cards)).not.toContain('7h');
@@ -152,21 +146,29 @@ test('a card that improves every hand the same way is not an out', () => {
 
 test('outs appear on the flop and turn only', () => {
   expect(computeEquity(hole, []).outs).toBeUndefined();
-  expect(computeEquity(hole, turn).outs?.[0].text).toBe('T♠ makes a royal flush');
+  expect(computeEquity(hole, turn).outs?.map((group) => group.text)).toEqual([
+    '7♠ and 7♣ make a full house, sevens full of twos',
+    '2♥ and 2♦ make a full house, twos full of sevens',
+  ]);
   expect(computeEquity(hole, river).outs).toBeUndefined();
 });
 
-test("Param's river is a royal flush that wins all 990 matchups", () => {
+test("Param's river fills him up, and only bigger full houses beat him", () => {
   const result = computeEquity(hole, river);
-  expect(result.madeHand).toBe('Royal flush');
-  expect(result.win).toBe(1);
+  expect(result.madeHand).toBe('Full house, sevens full of twos');
+  // Of the 990 hands left, he loses to pocket kings or queens (three each) and to the last seven
+  // with a king or a queen (three each), and splits with the last seven and a two (two).
+  expect(result.loss * 990).toBeCloseTo(12, 9);
+  expect(result.tie * 990).toBeCloseTo(2, 9);
+  expect(result.win * 990).toBeCloseTo(976, 9);
 });
 
 test('rejects cards dealt twice, boards of the wrong size and hands preflop.json does not hold', () => {
   expect(() => computeEquity(['As', 'As'], [])).toThrow('As is dealt twice');
   expect(() => computeEquity(hole, ['Qs', 'Js'])).toThrow('0, 3, 4 or 5 cards');
-  expect(() => computeHeadsUp(hole, ['Ks', 'Qd'], [])).toThrow('Ks is dealt twice');
-  expect(() => computeEquity(['7c', '2d'], [])).toThrow(PREFLOP_COMMAND);
+  expect(() => computeHeadsUp(hole, ['7h', 'Qd'], [])).toThrow('7h is dealt twice');
+  // preflop.json holds seven-deuce offsuit only, so ace-king suited isn't in it.
+  expect(() => computeEquity(['As', 'Ks'], [])).toThrow(PREFLOP_COMMAND);
 });
 
 test('the worker drops a job when a newer one arrives', async () => {

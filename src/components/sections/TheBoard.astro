@@ -190,6 +190,12 @@ const face = (card: string) => {
     gap: var(--gap);
   }
 
+  /* Where each card lands, a faint brass outline the card covers once it's dealt. */
+  .cards > li {
+    border-radius: var(--radius-card);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-brass) 30%, transparent);
+  }
+
   .card {
     position: relative;
     display: flex;

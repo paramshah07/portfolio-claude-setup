@@ -1,6 +1,6 @@
 ---
 street: flop
-card: Js
+card: Qd
 name: Open-source trading library
 pitch: An algorithmic trading and backtesting framework published on PyPI.
 metric: Metric placeholder

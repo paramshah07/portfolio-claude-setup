@@ -1,6 +1,6 @@
 ---
 street: flop
-card: Qs
+card: Kc
 name: Kalshi and Polymarket arbitrage engine
 pitch: A cross-venue statistical arbitrage detector and trader for prediction markets.
 metric: Metric placeholder

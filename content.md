@@ -21,7 +21,7 @@ The single source of every word on the site. Replace each TODO, delete any line 
   - Graduating: May 2027
 
 ## hand
-- hole: As Ks
+- hole: 7h 2s
 
 ## experience
 Suits: spades for quant and trading, hearts for product and full-stack, diamonds for data and research, clubs for infrastructure.
@@ -97,9 +97,9 @@ Suits: spades for quant and trading, hearts for product and full-stack, diamonds
 - suit: clubs
 
 ## board
-Exactly five projects: three on the flop, one on the turn and one on the river. Your two hole cards plus these five must all be different. The suggested cards tell a story: your ace-king of spades flops a royal flush draw, misses on the turn and completes the royal flush on the river, which is this site. Change any of them if you'd rather.
+Exactly five projects: three on the flop, one on the turn and one on the river. Your two hole cards plus these five must all be different. The suggested cards tell a story: your seven-deuce offsuit, the worst starting hand in poker, pairs its seven on the flop, makes two pair on the turn and fills up on the river, which is this site. Change any of them if you'd rather.
 
-### flop: Qs
+### flop: Kc
 - name: Kalshi and Polymarket arbitrage engine
 - pitch: A cross-venue statistical arbitrage detector and trader for prediction markets.
 - metric: Metric placeholder (PLACEHOLDER: one number with its unit)
@@ -108,7 +108,7 @@ Exactly five projects: three on the flop, one on the turn and one on the river. 
   - GitHub: https://example.com/arbitrage-engine (PLACEHOLDER)
 - details: Live system stats, model and market selection and liquidity-aware sizing across both venues. (TODO: expand)
 
-### flop: Js
+### flop: Qd
 - name: Open-source trading library
 - pitch: An algorithmic trading and backtesting framework published on PyPI.
 - metric: Metric placeholder (PLACEHOLDER: for example monthly downloads or GitHub stars)
@@ -136,7 +136,7 @@ Exactly five projects: three on the flop, one on the turn and one on the river. 
   - Write-up: https://example.com/macro-signals (PLACEHOLDER)
 - details: TODO
 
-### river: Ts
+### river: 7c
 - name: This site
 - pitch: The table you're sitting at, built with Astro, React Three Fiber and GSAP. (Once phase 2 ships, add the hand evaluator and exact equity math written from scratch.)
 - metric: Metric placeholder (PLACEHOLDER: after phase 2, for example the evaluator's test count or frame time)

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@nanostores/react';
 import { gsap } from 'gsap';
-import { street } from '../../lib/state/hud';
+import { handDealt, street } from '../../lib/state/hud';
 import { PIPS, SUIT_OF } from '../../lib/deck';
 import type { EquityResult, Street } from '../../lib/poker/api';
 import type { EquityRequest, EquityResponse } from '../../workers/equity.worker';
@@ -14,6 +14,8 @@ export type EquityReadoutProps = {
 
 const STREETS: Street[] = ['preflop', 'flop', 'turn', 'river'];
 const NAMES: Record<Street, string> = { preflop: 'Preflop', flop: 'Flop', turn: 'Turn', river: 'River' };
+/** The street the deal button deals next, until the river is out. */
+export const next = (now: Street): Street | undefined => STREETS[STREETS.indexOf(now) + 1];
 const STATS = ['equity', 'win', 'tie', 'loss'] as const;
 type Shares = Record<(typeof STATS)[number], number>;
 
@@ -28,13 +30,16 @@ export function dealt(board: EquityReadoutProps['board'], upTo: Street) {
 }
 
 /**
- * Param's hole cards against one random hand, for the cards The Board has dealt so far. The
- * worker does the counting, so a flop's million matchups never block the page. Numbers count
- * up to each new street's answer, and screen readers hear only that answer, once.
+ * Param's hole cards against one random hand, for the cards dealt so far. It starts preflop, and
+ * its button deals the flop, the turn and then the river, one at a time, keeping each street's
+ * equity in a ladder as the hand plays out. The worker does the counting, so a flop's million
+ * matchups never block the page. Numbers count up to each new street's answer, and screen readers
+ * hear only that answer, once.
  */
 export default function EquityReadout({ hole, board }: EquityReadoutProps) {
   const current = useStore(street);
   const [result, setResult] = useState<EquityResult | null>(null);
+  const [ladder, setLadder] = useState<Partial<Record<Street, number>>>({});
   const [announcement, setAnnouncement] = useState('');
   const root = useRef<HTMLElement>(null);
   const worker = useRef<Worker>(null);
@@ -71,6 +76,7 @@ export default function EquityReadout({ hole, board }: EquityReadoutProps) {
 
   useEffect(() => {
     if (!result) return;
+    setLadder((rungs) => ({ ...rungs, [result.street]: result.equity }));
     const write = () => {
       const now = shown.current;
       for (const stat of STATS) cells.current[stat]!.textContent = percent.format(now[stat]);
@@ -92,42 +98,68 @@ export default function EquityReadout({ hole, board }: EquityReadoutProps) {
   }, [result]);
 
   const cell = (stat: keyof Shares) => (el: HTMLElement | null) => void (cells.current[stat] = el);
+  const coming = next(current);
+  // The hand comes first: a street dealt before the hero's deal waits on the stage for it.
+  const deal = () => {
+    handDealt.set(true);
+    if (coming) street.set(coming);
+  };
 
   return (
     <section ref={root} className="equity" aria-labelledby="equity-title">
       <Panel id="equity-title" heading="h3" title="Equity" end={result && NAMES[result.street]}>
-        <p className="hud-note">{hole.map(pip).join(' ')} against one random hand</p>
-        <dl className="hud-rows">
-          <div className="lead">
-            <dt>Equity</dt>
-            {/* A space holds the big number's line until the first answer. */}
-            <dd ref={cell('equity')}>{'\u00a0'}</dd>
+        {/* Stacked in a column, or in one row under the board on a wide screen. */}
+        <div className="body">
+          <div className="headline">
+            <p className="hud-note">{hole.map(pip).join(' ')} against one random hand</p>
+            <dl className="hud-rows">
+              <div className="lead">
+                <dt>Equity</dt>
+                {/* A space holds the big number's line until the first answer. */}
+                <dd ref={cell('equity')}>{'\u00a0'}</dd>
+              </div>
+            </dl>
+            <div ref={split} className="split" aria-hidden="true">
+              <span className="win" />
+              <span className="tie" />
+              <span className="loss" />
+            </div>
           </div>
-        </dl>
-        <div ref={split} className="split" aria-hidden="true">
-          <span className="win" />
-          <span className="tie" />
-          <span className="loss" />
+          <dl className="hud-rows shares">
+            <div>
+              <dt className="win">Win</dt>
+              <dd ref={cell('win')} />
+            </div>
+            <div>
+              <dt className="tie">Tie</dt>
+              <dd ref={cell('tie')} />
+            </div>
+            <div>
+              <dt className="loss">Loss</dt>
+              <dd ref={cell('loss')} />
+            </div>
+            <div>
+              <dt>Made hand</dt>
+              <dd>{result?.madeHand}</dd>
+            </div>
+          </dl>
+          <div className="story">
+            <ol className="ladder" aria-label="Equity by street">
+              {STREETS.map((s) => (
+                <li key={s} aria-current={s === current ? 'step' : undefined}>
+                  <span>{NAMES[s]}</span>
+                  <span>{ladder[s] === undefined ? '' : percent.format(ladder[s])}</span>
+                </li>
+              ))}
+            </ol>
+            <p className="hud-note exact">{result && (result.exact ? `Exact over ${count.format(result.matchups)} matchups` : 'Estimated')}</p>
+          </div>
+          {coming && (
+            <button type="button" className="deal" onClick={deal}>
+              Deal the {coming}
+            </button>
+          )}
         </div>
-        <dl className="hud-rows">
-          <div>
-            <dt className="win">Win</dt>
-            <dd ref={cell('win')} />
-          </div>
-          <div>
-            <dt className="tie">Tie</dt>
-            <dd ref={cell('tie')} />
-          </div>
-          <div>
-            <dt className="loss">Loss</dt>
-            <dd ref={cell('loss')} />
-          </div>
-          <div>
-            <dt>Made hand</dt>
-            <dd>{result?.madeHand}</dd>
-          </div>
-        </dl>
-        <p className="hud-note exact">{result && (result.exact ? `Exact over ${count.format(result.matchups)} matchups` : 'Estimated')}</p>
         <p className="sr-only" role="status">
           {announcement}
         </p>

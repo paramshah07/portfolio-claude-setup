@@ -8,9 +8,12 @@ import { TABLE } from './layout';
 const { half: HALF, radius: RADIUS, rail: RAIL } = TABLE;
 const FELT = RADIUS - RAIL; // the radius of the felt's rounded ends
 // Snooker baize from TextureCan (fabrics_0075, CC0, https://www.texturecan.com/details/527/), one
-// tile every 12 cm, and smooth leather from Poly Haven (leather_white, CC0), one every 40 cm.
+// tile every 12 cm, smooth leather from Poly Haven (leather_white, CC0), one every 40 cm, and the
+// brushed, scuffed streaks of a played-on felt from ambientCG (SurfaceImperfections003, CC0), one
+// every 90 cm.
 const NAP = 0.12;
 const GRAIN = 0.4;
+const WEAR = 0.9;
 // scripts/make-table.py models the table in Blender. Its UVs are in metres.
 const MODEL = '/models/table.glb';
 useLoader.preload(GLTFLoader, MODEL, (loader) => loader.setMeshoptDecoder(MeshoptDecoder));
@@ -22,13 +25,14 @@ useLoader.preload(GLTFLoader, MODEL, (loader) => loader.setMeshoptDecoder(Meshop
  */
 export function Table() {
   const { scene } = useLoader(GLTFLoader, MODEL, (loader) => loader.setMeshoptDecoder(MeshoptDecoder));
-  const [nap, grain] = useLoader(THREE.TextureLoader, ['/textures/felt-normal.webp', '/textures/leather-normal.webp']);
+  const [nap, grain, wear] = useLoader(THREE.TextureLoader, ['/textures/felt-normal.webp', '/textures/leather-normal.webp', '/textures/felt-wear.webp']);
   const { gl } = useThree();
 
   const { materials, lines } = useMemo(() => {
     for (const [map, tile] of [
       [nap, NAP],
       [grain, GRAIN],
+      [wear, WEAR],
     ] as const) {
       map.wrapS = map.wrapT = THREE.RepeatWrapping;
       map.repeat.setScalar(1 / tile);
@@ -36,9 +40,11 @@ export function Table() {
     }
     const materials: Record<string, THREE.Material> = {
       // Deeper than the felt token: the warm grade and AgX pull green toward olive, and this renders
-      // as the emerald baize of reference/hero-16x9.jpg.
+      // as the emerald baize of reference/hero-16x9.jpg. The wear map runs from 0.84 to 1, so the
+      // colour sits a little lighter to come out the same on average.
       felt: new THREE.MeshPhysicalMaterial({
-        color: '#1D503E',
+        color: '#1F5642',
+        map: wear,
         roughness: 0.9,
         sheen: 1,
         sheenColor: '#3B785E',
@@ -47,15 +53,18 @@ export function Table() {
         normalScale: new THREE.Vector2(0.7, 0.7),
       }),
       // Padded leather: a soft coat gives the gentle roll-off along the rail's crest.
+      // The scene's reflections are kept dim so the room's bulbs don't light the felt, so the
+      // leather and brass take theirs up again: brass is only its reflections.
       leather: new THREE.MeshPhysicalMaterial({
         color: '#3A3329',
         roughness: 0.55,
         normalMap: grain,
         clearcoat: 0.25,
         clearcoatRoughness: 0.45,
+        envMapIntensity: 4,
       }),
       walnut: new THREE.MeshStandardMaterial({ color: '#3B2517', roughness: 0.45 }),
-      brass: new THREE.MeshStandardMaterial({ color: '#AD9773', metalness: 1, roughness: 0.35 }),
+      brass: new THREE.MeshStandardMaterial({ color: '#AD9773', metalness: 1, roughness: 0.35, envMapIntensity: 10 }),
     };
     scene.traverse((o) => {
       if (!(o instanceof THREE.Mesh)) return;
@@ -65,7 +74,7 @@ export function Table() {
       o.receiveShadow = true;
     });
     return { materials, lines: printedLines() };
-  }, [scene, nap, grain, gl]);
+  }, [scene, nap, grain, wear, gl]);
   useEffect(() => () => [lines, ...Object.values(materials)].forEach((o) => o.dispose()), [lines, materials]);
 
   return (

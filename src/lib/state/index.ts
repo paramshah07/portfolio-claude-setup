@@ -18,8 +18,13 @@ export type Tier = 'high' | 'medium' | 'low' | 'static';
 export const scrollProgress = atom(0);
 export const activeSection = atom<SectionId>('the-deal');
 export { palette } from './palette';
-/** How far The Board has dealt. Its deal in the motion pass writes this, and the equity readout follows it. */
+/**
+ * How far the board has dealt. The equity readout's button writes it a street at a time, and The
+ * Board's cards, the stage's deck and the readout all follow it.
+ */
 export const street = atom<Street>('preflop');
+/** Whether the visitor has asked for the hand: the hero's button or a click on its table. The stage deals once it's true. */
+export const handDealt = atom(false);
 
 export function pickTier(env: { width: number; reducedMotion: boolean; webgl2: boolean; memory?: number }): Tier {
   // deviceMemory only exists in Chromium (in GB, capped at 8). Missing means unknown, not low.

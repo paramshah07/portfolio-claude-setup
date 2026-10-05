@@ -39,13 +39,21 @@ const flat = ({ at, look }: Pose) => {
   return { x, y, z, lx, ly, lz };
 };
 
-// The deal's two shots. Close: low over the near rail, looking a little left of the deck so the
-// spring and the spread it lands in fill the right half of the frame, clear of the hero's copy.
-// Hand: a medium shot the camera settles on once the hole cards are down, near enough to read them
-// with the lamps still in frame.
+// The deal's shots, in table space, bottom to top (see dealShot in layout.ts):
+// - Open: higher and tilted down so the felt fills the lower half of the frame, the deck and chips
+//   in view and the room soft above it.
+// - Hand: the face-up hole cards in the lower middle, the board's place above them and the chips to
+//   the right.
+// - Peel: from the player's seat, looking down at the hole cards as their near corners lift.
+// - Close: low over the near rail, looking a little left of the deck, so the spring and the spread
+//   fill the right half of the frame clear of the hero's copy.
 const shot = ({ at, look }: Pose) => ({ at: new THREE.Vector3(...at).add(TABLE_AT), look: new THREE.Vector3(...look).add(TABLE_AT) });
-const CLOSE = shot({ at: [-0.04, 0.13, 0.52], look: [0.02, 0.05, 0.05] });
-const HAND = shot({ at: [0.03, 0.2, 0.8], look: [0.06, 0.1, 0.05] });
+const SHOTS = [
+  ['open', shot({ at: [0.04, 0.3, 0.86], look: [0.06, 0.03, -0.06] })],
+  ['hand', shot({ at: [0.02, 0.3, 0.78], look: [0.03, 0, 0.16] })],
+  ['peel', shot({ at: [-0.12, 0.15, 0.52], look: [-0.075, 0, 0.34] })],
+  ['close', shot({ at: [-0.04, 0.13, 0.52], look: [0.02, 0.05, 0.05] })],
+] as const;
 
 /** Where the camera is looking, for the depth of field to focus on. */
 export const focus = new THREE.Vector3();
@@ -119,12 +127,16 @@ export function Camera() {
 
     const { tl, pose } = path.current;
     tl.seek(s.progress);
-    // Toward the deal's shots as the deck calls for them, handing back to the scroll path over the
-    // first 15% of the page.
+    // Toward the deal's shots as the deck calls for them, each over the last, handing back to the
+    // scroll path over the first 15% of the page.
     const fade = THREE.MathUtils.clamp(1 - s.progress / 0.15, 0, 1);
-    const [hand, close] = [dealShot.hand * fade, dealShot.close * fade];
-    focus.set(pose.lx, pose.ly, pose.lz).lerp(HAND.look, hand).lerp(CLOSE.look, close);
-    offset.set(pose.x, pose.y, pose.z).lerp(HAND.at, hand).lerp(CLOSE.at, close).sub(focus);
+    focus.set(pose.lx, pose.ly, pose.lz);
+    offset.set(pose.x, pose.y, pose.z);
+    for (const [name, { at, look }] of SHOTS) {
+      focus.lerp(look, dealShot[name] * fade);
+      offset.lerp(at, dealShot[name] * fade);
+    }
+    offset.sub(focus);
     offset.applyAxisAngle(THREE.Object3D.DEFAULT_UP, s.yaw);
     right.crossVectors(offset, THREE.Object3D.DEFAULT_UP).normalize();
     offset.applyAxisAngle(right, s.pitch);

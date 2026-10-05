@@ -146,6 +146,102 @@ html:not(.js) .equity {
   background: var(--swatch);
 }
 
+/* Each street's equity as it's dealt, so the hand reads as a story. The street showing now is
+   cream; the others sit back. */
+.equity .ladder {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 0 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-cream) 12%, transparent);
+  padding: 0.75rem 0 0.5rem;
+}
+
+.equity .ladder li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  color: color-mix(in srgb, var(--color-cream) 60%, transparent);
+}
+
+/* One line tall before its street is dealt, so the row never moves. */
+.equity .ladder li > span:last-child {
+  min-height: 1lh;
+}
+
+.equity .ladder li[aria-current] {
+  color: var(--color-cream);
+}
+
+/* The next street, dealt on request: a brass-ringed bar across the foot of the panel. */
+.equity .deal {
+  display: block;
+  width: calc(100% - 2rem);
+  margin: 0 1rem 1rem;
+  border: 1px solid var(--color-brass);
+  border-radius: var(--radius-chip);
+  padding: 0.625rem 1rem;
+  color: var(--color-cream);
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
+}
+
+.equity .deal:hover {
+  border-color: var(--color-lamp);
+  background: color-mix(in srgb, var(--color-lamp) 12%, transparent);
+}
+
+/* On a wide screen the readout runs as one strip under the board, so the cards, the numbers and
+   the deal button all fit on screen together: the equity, the shares, the ladder, the button. */
+@media (min-width: 1024px) {
+  .equity {
+    width: 100%;
+    margin-top: 2rem;
+  }
+
+  .equity .body {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 1.25fr) auto;
+    align-items: center;
+    gap: 0 2.5rem;
+    padding: 1rem 1.5rem 1.25rem;
+  }
+
+  .equity .body .hud-note,
+  .equity .body .hud-rows {
+    padding: 0;
+  }
+
+  .equity .headline .hud-rows {
+    padding: 0.25rem 0 0.5rem;
+  }
+
+  .equity .body .split {
+    margin: 0;
+  }
+
+  .equity .shares > div {
+    padding: 0.3rem 0;
+  }
+
+  .equity .story .ladder {
+    margin: 0;
+    border-top: 0;
+    padding: 0;
+  }
+
+  .equity .story .exact {
+    min-height: 0;
+    padding: 0.5rem 0 0;
+  }
+
+  .equity .body .deal {
+    width: auto;
+    margin: 0;
+    white-space: nowrap;
+  }
+}
+
 /* Performance HUD, pinned to the corner over everything but the dialogs. */
 .perf-hud {
   position: fixed;

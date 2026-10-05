@@ -1,11 +1,11 @@
 {
   "hole": [
-    "As",
-    "Ks"
+    "7h",
+    "2s"
   ],
-  "startingHand": "AKs",
+  "startingHand": "72o",
   "matchups": 2097572400,
-  "win": 1389004215,
-  "tie": 34610976,
-  "loss": 673957209
+  "win": 665146081,
+  "tie": 120541920,
+  "loss": 1311884399
 }

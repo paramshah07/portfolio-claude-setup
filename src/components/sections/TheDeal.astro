@@ -15,6 +15,8 @@ const { site } = (await getEntry('profile', 'main'))!.data;
       </div>
     </div>
   </div>
+  <!-- The motion pass shows this where there's a stage to deal on, and a click on the table works too. -->
+  <button type="button" class="button deal-button" hidden>Deal the hand</button>
   <span class="cue" aria-hidden="true"></span>
 </section>
 
@@ -64,6 +66,18 @@ const { site } = (await getEntry('profile', 'main'))!.data;
   .button.solid:hover {
     background: var(--color-lamp);
     border-color: var(--color-lamp);
+  }
+
+  /* Over the table, a little above the scroll cue. */
+  .deal-button {
+    position: absolute;
+    bottom: 6rem;
+    left: 50%;
+    translate: -50% 0;
+  }
+
+  .deal.dealable {
+    cursor: pointer;
   }
 
   .cue {

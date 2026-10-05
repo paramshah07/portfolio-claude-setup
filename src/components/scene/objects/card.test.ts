@@ -60,3 +60,15 @@ test('the bend curls the ends round a cylinder and leaves the middle alone', () 
     if (pos.getY(i) === 0) expect(Math.hypot(bend.getY(i), bend.getZ(i))).toBeLessThan(1e-12);
   }
 });
+
+test('the peel lifts the near left corner well clear and leaves the far half alone', () => {
+  const peel = g.morphAttributes.position![1];
+  let lift = 0;
+  for (const i of all) {
+    // The far half of the card never moves.
+    if (pos.getY(i) > 0) expect(Math.hypot(peel.getX(i), peel.getY(i), peel.getZ(i))).toBe(0);
+    // The corner itself lifts well clear of the felt.
+    if (pos.getX(i) < -CARD.w / 2 + 0.002 && pos.getY(i) < -CARD.h / 2 + CARD.r + 0.001) lift = Math.max(lift, peel.getZ(i));
+  }
+  expect(lift).toBeGreaterThan(0.009);
+});
